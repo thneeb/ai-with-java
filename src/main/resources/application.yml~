@@ -1,0 +1,13 @@
+# local dev environment
+logging:
+  level:
+#    root: DEBUG
+    de.neebs.franchise.control: DEBUG
+#    org.springframework.cloud.openfeign: DEBUG
+management:
+  server:
+    port: 4467
+server:
+  port: 8081
+  error:
+    include-message: always

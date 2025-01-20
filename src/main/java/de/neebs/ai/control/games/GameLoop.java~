@@ -1,0 +1,55 @@
+package de.neebs.ai.control.tictactoe;
+
+import ch.qos.logback.core.joran.action.Action;
+import de.neebs.ai.control.rl.Agent;
+import de.neebs.ai.control.rl.EpsilonGreedyPolicy;
+import de.neebs.ai.control.rl.MultiPlayerResult;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+@Slf4j
+@Service
+public class GameLoop {
+    public void execute() {
+        int episodeCount = 2000;
+        TicTacToe.GameState gameState = new TicTacToe.GameState();
+        TicTacToeNetwork network = new TicTacToeNetwork(TicTacToe.Action.values(), gameState);
+        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
+        Agent<TicTacToe.Action, TicTacToe.GameState> oAgent = new TicTacToe.MyLearningAgent(network, greedy);
+        Agent<TicTacToe.Action, TicTacToe.GameState> xAgent = new TicTacToe.MyTicTacToeAgent();
+//        Agent<TicTacToe.Action, TicTacToe.GameState> xAgent = new TicTacToe.RandomAgent();
+//        Agent<TicTacToe.Action, TicTacToe.GameState> xAgent = new TicTacToe.NextFreeAgent();
+        TicTacToe ticTacToe = new TicTacToe(TicTacToe.Action.values(), gameState, xAgent, oAgent);
+        Map<Agent<TicTacToe.Action, TicTacToe.GameState>, Integer> result = new HashMap<>();
+        for (int i = 0; i < episodeCount; i++) {
+            MultiPlayerResult<TicTacToe.Action, TicTacToe.GameState> multiPlayerResult = ticTacToe.play();
+            greedy.decrementEpsilon(i);
+
+            for (Map.Entry<Agent<TicTacToe.Action, TicTacToe.GameState>, Double> entry : multiPlayerResult.getRewards().entrySet()) {
+                result.put(entry.getKey(), result.getOrDefault(entry.getKey(), 0) + (entry.getValue() == 1 ? 1 : 0));
+            }
+
+            if (i % 100 == 0) {
+                log.info("Episode: {}, {}, {}, {}", i, result.get(xAgent), result.get(oAgent), greedy.getEpsilon());
+                result = new HashMap<>();
+            }
+        }
+
+        for (int i = 0; i < 100; i++) {
+            MultiPlayerResult<TicTacToe.Action, TicTacToe.GameState> multiPlayerResult = ticTacToe.play();
+            Optional<Map.Entry<Agent<TicTacToe.Action, TicTacToe.GameState>, Double>> optional =
+                    multiPlayerResult.getRewards().entrySet().stream().filter(f -> f.getValue() == 1).findAny();
+
+            if (optional.isPresent()) {
+                log.info("Winner: {}", optional.get());
+            } else {
+                log.info("Remis");
+            }
+        }
+        log.info("Epsilon: {}", greedy.getEpsilon());
+    }
+}

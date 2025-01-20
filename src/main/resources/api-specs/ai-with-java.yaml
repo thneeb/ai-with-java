@@ -1,0 +1,89 @@
+openapi: 3.0.2
+info:
+  title: ai-with-java
+  version: 1.0.0
+  contact:
+    name: Thomas Neeb
+    email: thomas.neeb@nttdata.com
+paths:
+  /perceptron:
+    post:
+      operationId: startPerceptron
+      responses:
+        '204':
+          description: Returns the actual game field for the given id
+  /network:
+    post:
+      operationId: startNetwork
+      responses:
+        '204':
+          description: Returns the actual game field for the given id
+  /dl4j:
+    post:
+      operationId: startDL4J
+      responses:
+        '204':
+          description: Returns the actual game field for the given id
+  /tictactoe:
+    post:
+      operationId: ticTacToe
+      responses:
+        '204':
+          description: Returns the actual game field for the given id
+  /connectfour:
+    post:
+      operationId: connectFour
+      responses:
+        '204':
+          description: Returns the actual game field for the given id
+  /pong:
+    post:
+      operationId: pong
+      responses:
+        '204':
+          description: Returns the actual game field for the given id
+  /gym:
+    post:
+      operationId: createGym
+      responses:
+        '200':
+          description: Returns the actual game field for the given id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceId'
+  /gym/{instanceId}/reset:
+    parameters:
+      - name: instanceId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: resetGym
+      responses:
+        '200':
+          description: Returns the actual game field for the given id
+          content:
+            application/json:
+              schema:
+                type: object
+components:
+  schemas:
+    InstanceId:
+      type: object
+      properties:
+        instanceId:
+          type: string
+    Region:
+      enum:
+        - CALIFORNIA
+        - GRAND_CANYON
+        - UPPER_WEST
+        - MONTANA
+        - GREAT_LAKES
+        - NEW_YORK
+        - WASHINGTON
+        - FLORIDA
+        - CENTRAL
+        - TEXAS
