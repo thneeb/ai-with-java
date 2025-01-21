@@ -7,7 +7,7 @@ import java.util.*;
 
 @Slf4j
 @Getter
-public class MultiPlayerGame<A extends Enum<A>, O extends MultiPlayerObservation, E extends Environment<A, O>> {
+public class MultiPlayerGame<A extends Enum<A>, O extends MultiPlayerObservation, E extends AbstractEnvironment<A, O>> {
     private final E environment;
     private final List<Agent<A, O>> agents;
     private final ReplayBuffer<A, O> replayBuffer = new ReplayBuffer<>(1000);
@@ -29,7 +29,7 @@ public class MultiPlayerGame<A extends Enum<A>, O extends MultiPlayerObservation
         boolean done = false;
         while (!done) {
             Agent<A, O>agent = nextAgent();
-            A action = agent.chooseAction(observation, getEnvironment().getActionSpaceForObservation());
+            A action = agent.chooseAction(observation, getEnvironment().getActionSpace());
             StepResult<O> stepResult = getEnvironment().step(action);
             history.add(new HistoryEntry<>(agent, observation, action, stepResult.getReward()));
             double reward = rewards.getOrDefault(agent, 0d);

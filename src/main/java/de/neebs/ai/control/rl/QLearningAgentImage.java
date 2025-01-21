@@ -1,15 +1,14 @@
 package de.neebs.ai.control.rl;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 
+@Getter
 @RequiredArgsConstructor
-@Getter(AccessLevel.PACKAGE)
-public class QLearningAgent<A extends Enum<A>, O extends Observation> implements LearningAgent<A, O> {
-    private final NeuralNetwork1D neuralNetwork;
+public class QLearningAgentImage<A extends Enum<A>, O extends ObservationImage> implements LearningAgent<A, O> {
+    private final NeuralNetworkImage neuralNetwork;
     private final EpsilonGreedyPolicy policy;
     private final double gamma;
     private static final Random RANDOM = new Random();
@@ -19,7 +18,7 @@ public class QLearningAgent<A extends Enum<A>, O extends Observation> implements
         if (RANDOM.nextDouble() < policy.getEpsilon()) {
             return actionSpace.getRandomAction();
         } else {
-            double[] q = neuralNetwork.predict(observation.getFlattenedObservation());
+            double[] q = neuralNetwork.predict(observation.getObservation());
             List<Double> iList = new ArrayList<>(Arrays.stream(q).boxed().toList());
             int i = iList.indexOf(Collections.max(iList));
             return actionSpace.getAllActions().get(i);
@@ -28,23 +27,23 @@ public class QLearningAgent<A extends Enum<A>, O extends Observation> implements
 
     @Override
     public void learn(List<Transition<A, O>> transitions) {
-        List<NeuralNetwork1D.TrainingData> trainingData = transitions.stream()
+        List<NeuralNetworkImage.TrainingData> trainingData = transitions.stream()
                 .map(this::transition2TrainingData)
                 .toList();
         getNeuralNetwork().train(trainingData);
     }
 
-    private NeuralNetwork1D.TrainingData transition2TrainingData(Transition<A, O> transition) {
-        double[] qPrevious = getNeuralNetwork().predict(transition.getObservation().getFlattenedObservation());
+    private NeuralNetworkImage.TrainingData transition2TrainingData(Transition<A, O> transition) {
+        double[] qPrevious = getNeuralNetwork().predict(transition.getObservation().getObservation());
         double q;
         if (transition.getNextObservation() == null) {
             q = 0.0;
         } else {
-            double[] qNext = getNeuralNetwork().predict(transition.getNextObservation().getFlattenedObservation());
+            double[] qNext = getNeuralNetwork().predict(transition.getNextObservation().getObservation());
             q = Arrays.stream(qNext).max().orElse(0.0);
         }
         double target = transition.getReward() + q * getGamma();
         qPrevious[transition.getAction().ordinal()] = target;
-        return new NeuralNetwork1D.TrainingData(transition.getObservation().getFlattenedObservation(), qPrevious);
+        return new NeuralNetworkImage.TrainingData(transition.getObservation().getObservation(), qPrevious);
     }
 }

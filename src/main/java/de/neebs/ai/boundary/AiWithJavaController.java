@@ -67,6 +67,6 @@ public class AiWithJavaController implements DefaultApi {
 
     @Override
     public ResponseEntity<Object> resetGym(String instanceId) {
-        return ResponseEntity.ok(gymClient.reset(instanceId, Pong.GameState.class));
+        return ResponseEntity.ok(gymClient.reset(instanceId, Pong.GameState3D.class));
     }
 }

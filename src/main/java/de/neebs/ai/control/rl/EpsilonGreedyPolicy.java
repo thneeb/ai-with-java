@@ -1,5 +1,6 @@
 package de.neebs.ai.control.rl;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,29 +13,20 @@ public class EpsilonGreedyPolicy {
     @Getter
     private final int step;
 
-    public EpsilonGreedyPolicy(double epsilonStart, double epsilonMin, double decreaseRate, int step) {
-        this.epsilon = epsilonStart;
+    public EpsilonGreedyPolicy(double epsilon, double epsilonMin, double decreaseRate, int step) {
+        this.epsilon = epsilon;
         this.epsilonMin = epsilonMin;
         this.decreaseRate = decreaseRate;
-        this.step = step;
+        this.step = (step == 0 ? 1 : step);
     }
 
-    public double getEpsilon(int step) {
+    public void decrementEpsilon(int step) {
         if (step % this.step == 0) {
-            epsilon = Math.max(epsilonMin, epsilon - decreaseRate);
+            decrementEpsilon();
         }
-        return epsilon;
     }
 
-    public double decrementEpsilon(int step) {
-        if (step % this.step == 0) {
-            epsilon = Math.max(epsilonMin, epsilon - decreaseRate);
-        }
-        return epsilon;
-    }
-
-    public double decrementEpsilon() {
+    public void decrementEpsilon() {
         epsilon = Math.max(epsilonMin, epsilon - decreaseRate);
-        return epsilon;
     }
 }

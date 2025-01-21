@@ -47,7 +47,7 @@ public class ConnectFour {
         }
 
         @Override
-        public double[] getFlattenedObservations() {
+        public double[] getFlattenedObservation() {
             return DoubleStream.concat(Stream.of(board).flatMapToDouble(Arrays::stream), DoubleStream.of(getPlayer())).toArray();
         }
 
@@ -59,9 +59,27 @@ public class ConnectFour {
         }
     }
 
-    static class Env extends Environment<GameAction, GameState> {
+    static class ActionObservationFilter implements ActionFilter<GameAction, GameState> {
+        @Override
+        public ActionSpace<GameAction> filter(GameState observation, ActionSpace<GameAction> actions) {
+            List<GameAction> filtered = new ArrayList<>();
+            for (GameAction action: actions.getActions()) {
+                if (observation.getBoard()[0][action.ordinal()] == 0) {
+                    filtered.add(action);
+                }
+            }
+            return new ActionSpace<>(filtered);
+        }
+    }
+
+    static class Env extends AbstractEnvironment<GameAction, GameState> {
         public Env(Class<GameAction> actions, Class<GameState> observation) {
             super(actions, observation);
+        }
+
+        @Override
+        public List<Integer> getObservationSpace() {
+            return getShape(getCurrentObservation().board);
         }
 
         @Override
@@ -69,24 +87,13 @@ public class ConnectFour {
             try {
                 GameState state = getCurrentObservation().copy();
                 int row = Utils.step(state, action);
-                double reward = Utils.checkWin(state, row, action.ordinal()) ? 1 : 0;
+                double reward = Utils.checkWin(state) ? 1 : 0;
                 state.nextPlayer();
                 setCurrentObservation(state);
                 return new StepResult<>(getCurrentObservation(), reward, reward != 0 || Utils.checkRemis(getCurrentObservation()));
             } catch (IllegalMoveException e) {
                 return new StepResult<>(getCurrentObservation(), -1, true);
             }
-        }
-
-        @Override
-        public ActionSpace<GameAction> getActionSpaceForObservation(GameState observation) {
-            List<GameAction> actions = new ArrayList<>();
-            for (int i = 0; i < 7; i++) {
-                if (observation.getBoard()[0][i] == 0) {
-                    actions.add(GameAction.values()[i]);
-                }
-            }
-            return new ActionSpace<>(actions);
         }
     }
 
@@ -105,6 +112,17 @@ public class ConnectFour {
                 }
             }
             return remis;
+        }
+
+        private static boolean checkWin(GameState observation) {
+            for (int row = 0; row < 6; row++) {
+                for (int col = 0; col < 7; col++) {
+                    if (observation.getBoard()[row][col] != 0 && checkWin(observation, row, col)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private static boolean checkWin(GameState observation, int row, int col) {
@@ -139,8 +157,15 @@ public class ConnectFour {
     }
 
     static class MyConnectFourAgent implements Agent<GameAction, GameState> {
+        private final ActionFilter<GameAction, GameState> actionFilter;
+
+        MyConnectFourAgent() {
+            actionFilter = new ActionObservationFilter();
+        }
+
         @Override
         public GameAction chooseAction(GameState observation, ActionSpace<GameAction> actionSpace) {
+            actionSpace = actionFilter.filter(observation, actionSpace);
             // let's see, if the agent can win in his next draw
             for (GameAction action: actionSpace.getActions()) {
                 GameState copy = observation.copy();
@@ -173,7 +198,7 @@ public class ConnectFour {
     private static class MyNeuralNetworkFactory implements NeuralNetworkFactory {
         @Override
         public MultiLayerNetwork createNeuralNetwork() {
-            int input = new GameState().getFlattenedObservations().length;
+            int input = new GameState().getFlattenedObservation().length;
             int output = GameAction.values().length;
             MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                     .updater(new Adam(0.001))
@@ -222,7 +247,7 @@ public class ConnectFour {
     public void execute() {
         int episodeCount = 2000;
         Env environment = new Env(GameAction.class, GameState.class);
-        NeuralNetwork network = new NeuralNetwork(new MyNeuralNetworkFactory());
+        NeuralNetwork1D network = new NeuralNetwork1D(new MyNeuralNetworkFactory());
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(1).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
         Agent<GameAction, GameState> red = new QLearningAgent<>(network, greedy, 0.99);
 //        Agent<Action, GameState> red = new DoubleQLearningAgent<>(network, greedy, 0.99);

@@ -37,7 +37,7 @@ public class Kalaha {
         }
 
         @Override
-        public double[] getFlattenedObservations() {
+        public double[] getFlattenedObservation() {
             return DoubleStream.concat(IntStream.of(board[0]).mapToDouble(f -> (double) f), IntStream.of(board[1]).mapToDouble(f -> (double) f)).toArray();
         }
 
@@ -51,15 +51,22 @@ public class Kalaha {
         }
     }
 
-    static class Env extends Environment<Action, GameState> {
+    static class ActionObservationFilter implements ActionFilter<Action, GameState> {
+        @Override
+        public ActionSpace<Action> filter(GameState observation, ActionSpace<Action> actions) {
+            List<Action> as = Arrays.stream(Action.values()).filter(f -> observation.getBoard(observation.getPlayer())[f.ordinal()] != 0).toList();
+            return new ActionSpace<>(as);
+        }
+    }
+
+    static class Env extends AbstractEnvironment<Action, GameState> {
         public Env(Class<Action> actions, Class<GameState> observation) {
             super(actions, observation);
         }
 
         @Override
-        public ActionSpace<Action> getActionSpaceForObservation(GameState observation) {
-            List<Action> actions = Arrays.stream(Action.values()).filter(f -> observation.getBoard(observation.getPlayer())[f.ordinal()] != 0).toList();
-            return new ActionSpace<>(actions);
+        public List<Integer> getObservationSpace() {
+            return getShape(getCurrentObservation().board);
         }
 
         @Override

@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -42,6 +43,14 @@ public class GymClient {
     @Builder
     private static class Action {
         private int action;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    private static class ObservationSpace {
+        private String name;
+        private List<Integer> shape;
     }
 
     public String makeEnv(String envName) {
@@ -73,5 +82,14 @@ public class GymClient {
                 .truncated((boolean) response.getBody().get("truncated"))
                 .info((Map<String, Object>) response.getBody().get("info"))
                 .build();
+    }
+
+    public List<Integer> getObservationSpace(String instanceId) {
+        String url = "http://localhost:5000/v1/envs/" + instanceId + "/observation_space/";
+        ObservationSpace observationSpace = restTemplate.getForObject(url, ObservationSpace.class);
+        if (observationSpace == null) {
+            throw new IllegalArgumentException("Could not get observation space");
+        }
+        return observationSpace.getShape();
     }
 }

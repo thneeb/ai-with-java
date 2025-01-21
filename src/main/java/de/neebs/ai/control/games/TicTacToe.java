@@ -24,20 +24,27 @@ public class TicTacToe  {
         UPPER_LEFT, UPPER_MIDDLE, UPPER_RIGHT, MIDDLE_LEFT, MIDDLE_MIDDLE, MIDDLE_RIGHT, LOWER_LEFT, LOWER_MIDDLE, LOWER_RIGHT
     }
 
-    public static class Env extends Environment<GameAction, GameState> {
+    static class ActionObservationFilter implements ActionFilter<GameAction, GameState> {
+        @Override
+        public ActionSpace<GameAction> filter(GameState observation, ActionSpace<GameAction> actions) {
+            List<GameAction> filteredActions = new ArrayList<>();
+            for (GameAction action : actions.getActions()) {
+                if (observation.getBoard()[action.ordinal()] == 0) {
+                    filteredActions.add(action);
+                }
+            }
+            return new ActionSpace<>(filteredActions);
+        }
+    }
+
+    public static class Env extends AbstractEnvironment<GameAction, GameState> {
         public Env(Class<GameAction> actions, Class<GameState> observation) {
             super(actions, observation);
         }
 
         @Override
-        public ActionSpace<GameAction> getActionSpaceForObservation(GameState observation) {
-            List<GameAction> actions = new ArrayList<>();
-            for (int i = 0; i < observation.getBoard().length; i++) {
-                if (observation.getBoard()[i] == 0) {
-                    actions.add(GameAction.values()[i]);
-                }
-            }
-            return new ActionSpace<>(actions);
+        public List<Integer> getObservationSpace() {
+            return getShape(getCurrentObservation().board);
         }
 
         @Override
@@ -78,7 +85,7 @@ public class TicTacToe  {
         }
 
         @Override
-        public double[] getFlattenedObservations() {
+        public double[] getFlattenedObservation() {
             return DoubleStream.concat(Arrays.stream(board), DoubleStream.of(getPlayer())).toArray();
         }
 
@@ -91,8 +98,15 @@ public class TicTacToe  {
     }
 
     static class MyTicTacToeAgent implements Agent<GameAction, GameState> {
+        private final ActionObservationFilter filterActions;
+
+        MyTicTacToeAgent() {
+            filterActions = new ActionObservationFilter();
+        }
+
         @Override
         public GameAction chooseAction(GameState observation, ActionSpace<GameAction> actionSpace) {
+            actionSpace = filterActions.filter(observation, actionSpace);
             for (GameAction action : actionSpace.getActions()) {
                 GameState gameState = observation.copy();
                 // check if we can win
@@ -159,7 +173,7 @@ public class TicTacToe  {
     public static class MyNeuralNetworkFactory implements NeuralNetworkFactory {
         @Override
         public MultiLayerNetwork createNeuralNetwork() {
-            int input = new GameState().getFlattenedObservations().length;
+            int input = new GameState().getFlattenedObservation().length;
             int output = GameAction.values().length;
             MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                     .updater(new Sgd(0.01))
@@ -193,7 +207,7 @@ public class TicTacToe  {
 
     public void execute() {
         int episodeCount = 700;
-        NeuralNetwork network = new NeuralNetwork(new MyNeuralNetworkFactory());
+        NeuralNetwork1D network = new NeuralNetwork1D(new MyNeuralNetworkFactory());
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
 //        Agent<Action, GameState> oAgent = new QLearningAgent<>(network, greedy, 0.99);
         Agent<GameAction, GameState> oAgent = new DoubleQLearningAgent<>(network, greedy, 0.99);

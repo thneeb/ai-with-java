@@ -2,30 +2,32 @@ package de.neebs.ai.control.rl;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.datavec.image.loader.Java2DNativeImageLoader;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.optimize.api.TrainingListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.List;
 
-public class NeuralNetwork {
+public class NeuralNetworkImage {
     private final MultiLayerNetwork network;
+    private final Java2DNativeImageLoader loader = new Java2DNativeImageLoader();
 
-    public NeuralNetwork(NeuralNetworkFactory factory) {
+    public NeuralNetworkImage(NeuralNetworkFactory factory) {
         this.network = factory.createNeuralNetwork();
     }
 
-    public void copyParams(NeuralNetwork other) {
+    public void copyParams(NeuralNetworkImage other) {
         network.setParams(other.network.params());
     }
 
-    public void train(double[] input, double[] output) {
+    public void train(double[][][] input, double[] output) {
         INDArray myInput = Nd4j.create(input);
-        myInput = myInput.reshape(1, input.length);
         INDArray myOutput = Nd4j.create(output);
-        myOutput = myOutput.reshape(1, output.length);
         network.fit(myInput, myOutput);
     }
 
@@ -34,25 +36,37 @@ public class NeuralNetwork {
     }
 
     public void train(List<TrainingData> trainingData) {
-        double[][] inputs = trainingData.stream()
+        INDArray[] inputs = trainingData.stream()
                 .map(TrainingData::getInput)
-                .toArray(double[][]::new);
+                .map(this::asMatrix)
+                .toArray(INDArray[]::new);
         double[][] outputs = trainingData.stream()
                 .map(TrainingData::getOutput)
                 .toArray(double[][]::new);
-        DataSet dataSet = new DataSet(Nd4j.create(inputs), Nd4j.create(outputs));
+        DataSet dataSet = new DataSet(Nd4j.concat(0, inputs), Nd4j.create(outputs));
         network.fit(dataSet);
     }
 
-    public double[] predict(double[] input) {
-        INDArray myInput = Nd4j.create(input);
-        myInput = myInput.reshape(1, input.length);
-        INDArray myOutput = network.output(myInput);
-        return myOutput.toDoubleVector();
+    private INDArray asMatrix(BufferedImage input) {
+        try {
+            return loader.asMatrix(input);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
-    public NeuralNetwork copy() {
-        return new NeuralNetwork(() -> {
+    public double[] predict(BufferedImage input) {
+        try {
+            INDArray myInput = loader.asMatrix(input);
+            INDArray myOutput = network.output(myInput);
+            return myOutput.toDoubleVector();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public NeuralNetworkImage copy() {
+        return new NeuralNetworkImage(() -> {
             MultiLayerNetwork n = network.clone();
             n.setParams(network.params());
             return n;
@@ -66,7 +80,7 @@ public class NeuralNetwork {
     @Getter
     @Builder
     public static class TrainingData {
-        private double[] input;
+        private BufferedImage input;
         private double[] output;
     }
 }
