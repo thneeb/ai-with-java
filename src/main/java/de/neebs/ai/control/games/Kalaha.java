@@ -14,7 +14,7 @@ public class Kalaha {
     }
 
     @Getter
-    public static class GameState extends MultiPlayerObservation {
+    public static class GameState extends MultiPlayerState implements Observation1D{
         private int[][] board;
 
         public GameState() {

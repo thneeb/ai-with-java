@@ -8,7 +8,7 @@ import java.util.*;
 
 @RequiredArgsConstructor
 @Getter(AccessLevel.PACKAGE)
-public class QLearningAgent<A extends Enum<A>, O extends Observation> implements LearningAgent<A, O> {
+public class QLearningAgent<A extends Enum<A>, O extends Observation1D> implements LearningAgent<A, O> {
     private final NeuralNetwork1D<O> neuralNetwork;
     private final EpsilonGreedyPolicy policy;
     private final double gamma;

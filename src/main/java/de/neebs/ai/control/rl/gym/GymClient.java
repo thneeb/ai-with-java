@@ -1,6 +1,7 @@
 package de.neebs.ai.control.rl.gym;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.neebs.ai.control.rl.Observation;
 import lombok.Builder;
@@ -75,12 +76,13 @@ public class GymClient {
         }
         Map<String, Object> map = Map.of("observation", response.getBody().get("observation"));
         T observation = objectMapper.convertValue(map, clazz);
+        Map<String, Object> info = objectMapper.convertValue(response.getBody().get("info"), new TypeReference<>() {});
         return GymStepResult.<T>builder()
                 .observation(observation)
                 .reward((double) response.getBody().get("reward"))
                 .done((boolean) response.getBody().get("done"))
                 .truncated((boolean) response.getBody().get("truncated"))
-                .info((Map<String, Object>) response.getBody().get("info"))
+                .info(info)
                 .build();
     }
 

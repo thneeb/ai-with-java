@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @RequiredArgsConstructor
-public abstract class MultiPlayerObservation implements Observation {
+public abstract class MultiPlayerState {
     private final int playerCount;
 
     @Getter

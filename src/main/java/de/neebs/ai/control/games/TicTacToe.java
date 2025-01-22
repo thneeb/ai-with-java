@@ -68,7 +68,7 @@ public class TicTacToe  {
 
     @Getter
     @ToString
-    public static class GameState extends MultiPlayerObservation {
+    public static class GameState extends MultiPlayerState implements Observation1D {
         private double[] board = new double[9];
 
         public GameState() {
@@ -206,7 +206,7 @@ public class TicTacToe  {
     }
 
     public void execute() {
-        int episodeCount = 700;
+        int episodeCount = 300;
         NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(new MyNeuralNetworkFactory());
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
 //        Agent<Action, GameState> oAgent = new QLearningAgent<>(network, greedy, 0.99);
@@ -217,7 +217,7 @@ public class TicTacToe  {
         Env env = new Env(GameAction.class, GameState.class);
         MultiPlayerGame<GameAction, GameState, Env> ticTacToe = new MultiPlayerGame<>(env, List.of(xAgent, oAgent));
         Map<Agent<GameAction, GameState>, Integer> result = new HashMap<>();
-        for (int i = 0; i < episodeCount; i++) {
+        for (int i = 1; i <= episodeCount; i++) {
             MultiPlayerResult<GameAction, GameState> multiPlayerResult = ticTacToe.play();
             greedy.decrementEpsilon(i);
 
@@ -231,7 +231,7 @@ public class TicTacToe  {
             }
         }
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 50; i++) {
             MultiPlayerResult<GameAction, GameState> multiPlayerResult = ticTacToe.play();
             Optional<Map.Entry<Agent<GameAction, GameState>, Double>> optional =
                     multiPlayerResult.getRewards().entrySet().stream().filter(f -> f.getValue() == 1).findAny();

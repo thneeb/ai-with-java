@@ -4,7 +4,6 @@ import lombok.Builder;
 import lombok.Getter;
 import org.datavec.image.loader.Java2DNativeImageLoader;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.deeplearning4j.optimize.api.TrainingListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
@@ -14,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public class NeuralNetworkImage {
+public class NeuralNetworkImage<O extends ObservationImage> implements NeuralNetwork<O> {
     private final MultiLayerNetwork network;
     private final Java2DNativeImageLoader loader = new Java2DNativeImageLoader();
 
@@ -30,13 +29,32 @@ public class NeuralNetworkImage {
         }
     }
 
-    public void copyParams(NeuralNetworkImage other) {
+    @Override
+    public void train(O observation, double[] target) {
+        INDArray input = asMatrix(observation.getObservation());
+        INDArray output = Nd4j.create(target);
+        network.fit(new DataSet(input, output));
+    }
+
+    @Override
+    public double[] predict(O observation) {
+        try {
+            INDArray myInput = loader.asMatrix(observation.getObservation());
+            INDArray myOutput = network.output(myInput);
+            return myOutput.toDoubleVector();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void copyParams(NeuralNetworkImage<O> other) {
         network.setParams(other.network.params());
     }
 
-    public void train(List<TrainingData> trainingData) {
+    public void train(List<TrainingData<O>> trainingData) {
         INDArray[] inputs = trainingData.stream()
                 .map(TrainingData::getInput)
+                .map(ObservationImage::getObservation)
                 .map(this::asMatrix)
                 .toArray(INDArray[]::new);
         double[][] outputs = trainingData.stream()
@@ -54,16 +72,6 @@ public class NeuralNetworkImage {
         }
     }
 
-    public double[] predict(BufferedImage input) {
-        try {
-            INDArray myInput = loader.asMatrix(input);
-            INDArray myOutput = network.output(myInput);
-            return myOutput.toDoubleVector();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
     public void save(String filename) {
         try {
             network.save(new File(filename), true);
@@ -74,8 +82,8 @@ public class NeuralNetworkImage {
 
     @Getter
     @Builder
-    public static class TrainingData {
-        private BufferedImage input;
+    public static class TrainingData<O extends ObservationImage> {
+        private O input;
         private double[] output;
     }
 }

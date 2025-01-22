@@ -13,13 +13,10 @@ class TicTacToeNetworkTest {
         gameState.setPlayer(1);
         gameState.getBoard()[TicTacToe.GameAction.MIDDLE_MIDDLE.ordinal()] = 1;
         NeuralNetwork1D<TicTacToe.GameState> network = new NeuralNetwork1D<>(new TicTacToe.MyNeuralNetworkFactory());
-        int episodes = 1000;
-        for (int i = 0; i < episodes; i++) {
-            for (TicTacToe.GameAction a : TicTacToe.GameAction.values()) {
-                double[] prediction = network.predict(gameState);
-                prediction[a.ordinal()] = gameState.getFlattenedObservation()[a.ordinal()] == 0 ? 0 : -10;
-                network.train(new NeuralNetwork1D.TrainingData<>(gameState, prediction));
-            }
+        for (TicTacToe.GameAction a : TicTacToe.GameAction.values()) {
+            double[] prediction = network.predict(gameState);
+            prediction[a.ordinal()] = gameState.getFlattenedObservation()[a.ordinal()] == 0 ? 0 : -1;
+            network.train(new NeuralNetwork1D.TrainingData<>(gameState, prediction));
         }
         System.out.println(Arrays.toString(network.predict(gameState)));
     }

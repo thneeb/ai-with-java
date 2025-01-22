@@ -68,22 +68,12 @@ public class Pong {
         private double getChannelScale() {
             return Stream.of(observation).flatMap(Stream::of).flatMapToDouble(DoubleStream::of).max().orElse(0);
         }
-
-        @Override
-        public double[] getFlattenedObservation() {
-            throw new UnsupportedOperationException();
-        }
     }
 
     @Getter
     @RequiredArgsConstructor
     static class GameStateImage implements ObservationImage {
         private final BufferedImage observation;
-
-        @Override
-        public double[] getFlattenedObservation() {
-            return new double[0];
-        }
     }
 
     private static class Utils {
@@ -247,11 +237,11 @@ public class Pong {
 
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.42).epsilonMin(0.1).decreaseRate(0.01).build();
 
-        NeuralNetworkImage network;
+        NeuralNetworkImage<GameStateImage> network;
         if (startFresh) {
-            network = new NeuralNetworkImage(new MyNeuralNetworkFactory());
+            network = new NeuralNetworkImage<>(new MyNeuralNetworkFactory());
         } else {
-            network = new NeuralNetworkImage("pong-agent.net");
+            network = new NeuralNetworkImage<>("pong-agent.net");
         }
 
         Agent<GameAction, GameStateImage> agent = new QLearningAgentImage<>(

@@ -30,7 +30,7 @@ public class ConnectFour {
 
     @Getter
     @Setter
-    static class GameState extends MultiPlayerObservation {
+    static class GameState extends MultiPlayerState implements Observation1D {
         private double[][] board;
 
         public GameState() {

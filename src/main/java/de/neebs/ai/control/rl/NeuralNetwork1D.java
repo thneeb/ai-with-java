@@ -11,7 +11,7 @@ import org.nd4j.linalg.factory.Nd4j;
 
 import java.util.List;
 
-public class NeuralNetwork1D<O extends Observation> implements NeuralNetwork<O> {
+public class NeuralNetwork1D<O extends Observation1D> implements NeuralNetwork<O> {
     private final MultiLayerNetwork network;
 
     public NeuralNetwork1D(NeuralNetworkFactory factory) {
@@ -59,7 +59,7 @@ public class NeuralNetwork1D<O extends Observation> implements NeuralNetwork<O> 
     public void train(List<TrainingData<O>> trainingData) {
         double[][] inputs = trainingData.stream()
                 .map(TrainingData::getInput)
-                .map(Observation::getFlattenedObservation)
+                .map(Observation1D::getFlattenedObservation)
                 .toArray(double[][]::new);
         double[][] outputs = trainingData.stream()
                 .map(TrainingData::getOutput)
