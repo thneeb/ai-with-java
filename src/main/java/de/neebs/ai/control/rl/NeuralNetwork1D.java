@@ -9,6 +9,8 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class NeuralNetwork1D<O extends Observation1D> implements NeuralNetwork<O> {
@@ -16,6 +18,14 @@ public class NeuralNetwork1D<O extends Observation1D> implements NeuralNetwork<O
 
     public NeuralNetwork1D(NeuralNetworkFactory factory) {
         this.network = factory.createNeuralNetwork();
+    }
+
+    public NeuralNetwork1D(String filename) {
+        try {
+            this.network = MultiLayerNetwork.load(new File(filename), true);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public void copyParams(NeuralNetwork1D<O> other) {
@@ -41,15 +51,11 @@ public class NeuralNetwork1D<O extends Observation1D> implements NeuralNetwork<O
 
     @Override
     public void save(String filename) {
-
-    }
-
-    public void train(double[] input, double[] output) {
-        INDArray myInput = Nd4j.create(input);
-        myInput = myInput.reshape(1, input.length);
-        INDArray myOutput = Nd4j.create(output);
-        myOutput = myOutput.reshape(1, output.length);
-        network.fit(myInput, myOutput);
+        try {
+            network.save(new File(filename));
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public void train(TrainingData<O> trainingData) {

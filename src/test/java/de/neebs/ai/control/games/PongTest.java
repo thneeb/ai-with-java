@@ -1,7 +1,10 @@
 package de.neebs.ai.control.games;
 
+import de.neebs.ai.control.rl.Environment;
+import de.neebs.ai.control.rl.StepResult;
+import de.neebs.ai.control.rl.gym.GymClient;
+import de.neebs.ai.control.rl.gym.GymEnvironment;
 import org.datavec.image.data.Image;
-import org.datavec.image.data.ImageWritable;
 import org.datavec.image.loader.Java2DNativeImageLoader;
 import org.datavec.image.loader.NativeImageLoader;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
@@ -11,19 +14,29 @@ import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
 class PongTest {
+    @Autowired
+    private GymClient gymClient;
+
     @Test
     void test2d() {
         MultiLayerNetwork model = createNetwork();
@@ -31,6 +44,7 @@ class PongTest {
         double[][] input = createImageArray();
         INDArray myInput = Nd4j.create(input);
         INDArray myOutput = model.output(myInput);
+        Assertions.assertNotNull(myOutput);
     }
 
     @Test
@@ -46,6 +60,7 @@ class PongTest {
         }
         INDArray myInput = Nd4j.create(input3d);
         INDArray myOutput = model.output(myInput);
+        Assertions.assertNotNull(myOutput);
     }
 
     @Test
@@ -57,6 +72,7 @@ class PongTest {
         Java2DNativeImageLoader loader = new Java2DNativeImageLoader();
         INDArray myInput = loader.asMatrix(bufImage);
         INDArray myOutput = model.output(myInput);
+        Assertions.assertNotNull(myOutput);
     }
 
     @Test
@@ -67,6 +83,7 @@ class PongTest {
         Image image = loader.asImageMatrix("test.bmp");
         INDArray input = image.getImage();
         INDArray myOutput = model.output(input);
+        Assertions.assertNotNull(myOutput);
     }
 
     private static MultiLayerNetwork createNetwork() {
@@ -117,6 +134,23 @@ class PongTest {
         BufferedImage image = createImage(input);
         File outputFile = new File("test.bmp");
         ImageIO.write(image, "bmp", outputFile);
+    }
+
+    @Test
+    void playGameAndSaveImages() {
+        Environment<Pong.GameAction, Pong.GameState3D> env3d =
+                new GymEnvironment<>(Pong.GameAction.class, Pong.GameState3D.class, gymClient).init("ale_py:ALE/Pong-v5");
+        Pong.GameState3D state = env3d.reset();
+        boolean done = false;
+        int i = 0;
+        while (!done) {
+            String imageName = "output-" + String.format("%05d", i) + ".bmp";
+            Pong.Utils.saveImage(state, imageName);
+            StepResult<Pong.GameState3D> stepResult = env3d.step(Pong.GameAction.NOOP);
+            state = stepResult.getObservation();
+            done = stepResult.isDone();
+            i++;
+        }
     }
 
     private static BufferedImage createImage(double[][] input) {

@@ -46,7 +46,7 @@ public class DoubleQLearningAgent<A extends Action, O extends Observation1D> ext
         return new NeuralNetwork1D.TrainingData<>(transition.getObservation(), qPrevious);
     }
 
-        @Override
+    @Override
     public void iterationDone(Model model, int iteration, int epoch) {
         if (iteration % 50 == 0) {
             getTargetNetwork().copyParams(getNeuralNetwork());

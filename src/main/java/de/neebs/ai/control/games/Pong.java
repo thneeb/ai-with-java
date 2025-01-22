@@ -3,7 +3,7 @@ package de.neebs.ai.control.games;
 import de.neebs.ai.control.rl.*;
 import de.neebs.ai.control.rl.gym.GymClient;
 import de.neebs.ai.control.rl.gym.GymEnvironment;
-import de.neebs.ai.control.rl.gym.ObservationWrapper;
+import de.neebs.ai.control.rl.ObservationWrapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -26,8 +26,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -64,10 +62,6 @@ public class Pong {
                 return 1;
             }
         }
-
-        private double getChannelScale() {
-            return Stream.of(observation).flatMap(Stream::of).flatMapToDouble(DoubleStream::of).max().orElse(0);
-        }
     }
 
     @Getter
@@ -76,11 +70,11 @@ public class Pong {
         private final BufferedImage observation;
     }
 
-    private static class Utils {
+    static class Utils {
         private Utils() {
         }
 
-        private static void saveImage(GameState3D state, String name) {
+        static void saveImage(GameState3D state, String name) {
             BufferedImage image = createImage(state);
             try {
                 File outputFile = new File(name);
@@ -90,7 +84,7 @@ public class Pong {
             }
         }
 
-        private static BufferedImage convertToGrayscale(BufferedImage rgbImage) {
+        static BufferedImage convertToGrayscale(BufferedImage rgbImage) {
             int width = rgbImage.getWidth();
             int height = rgbImage.getHeight();
 
@@ -104,7 +98,7 @@ public class Pong {
             return grayImage;
         }
 
-        private static BufferedImage resizeImage(BufferedImage image, int newWidth, int newHeight) {
+        static BufferedImage resizeImage(BufferedImage image, int newWidth, int newHeight) {
             Image tmp = image.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
             BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
 
@@ -115,20 +109,7 @@ public class Pong {
             return resizedImage;
         }
 
-        private static GameState3D scaleObservation(GameState3D state) {
-            double maxChannelScale = 255;
-            for (int col = 0; col < state.getWidth(); col++) {
-                for (int row = 0; row < state.getHeight(); row++) {
-                    for (int channel = 0; channel < state.getChannels(); channel++) {
-                        state.observation[col][row][channel] /= maxChannelScale;
-                    }
-                }
-            }
-            return state;
-        }
-
         private static BufferedImage createImage(GameState3D state) {
-            double maxChannelScale = state.getChannelScale();
             BufferedImage image = new BufferedImage(state.getWidth(), state.getHeight(), BufferedImage.TYPE_INT_RGB );
             for (int col = 0; col < state.getWidth(); col++) {
                 for (int row = 0; row < state.getHeight(); row++) {
@@ -136,29 +117,13 @@ public class Pong {
                     if (state.getChannels() == 3) {
                         rgb = ((int)state.observation[col][row][0] << 16) | ((int)state.observation[col][row][1] << 8) | (int)state.observation[col][row][2];
                     } else {
-                        if (maxChannelScale > 1) {
-                            rgb = (int)(state.observation[col][row][0]);
-                        } else {
-                            rgb = (int)(state.observation[col][row][0]) * 255;
-                        }
+                        rgb = (int)(state.observation[col][row][0]);
                         rgb = (rgb << 16) | (rgb << 8) | rgb;
                     }
                     image.setRGB(col, row, rgb);
                 }
             }
             return image;
-        }
-
-        private static GameState3D createObservation(BufferedImage image) {
-            GameState3D observation = new GameState3D();
-            observation.setObservation(new double[image.getWidth()][image.getHeight()][1]);
-            for (int col = 0; col < image.getWidth(); col++) {
-                for (int row = 0; row < image.getHeight(); row++) {
-                    int rgb = image.getRGB(col, row);
-                    observation.observation[col][row][0] = rgb & 0xFF;
-                }
-            }
-            return observation;
         }
     }
 
@@ -231,6 +196,7 @@ public class Pong {
     }
 
     public void execute(boolean startFresh) {
+        String filename = "pong-agent.zip";
         Environment<GameAction, GameState3D> env3d =
                 new GymEnvironment<>(GameAction.class, GameState3D.class, gymClient).init("ale_py:ALE/Pong-v5");
         Environment<GameAction, GameStateImage> envImage = new ReduceImageSize(env3d);
@@ -241,7 +207,7 @@ public class Pong {
         if (startFresh) {
             network = new NeuralNetworkImage<>(new MyNeuralNetworkFactory());
         } else {
-            network = new NeuralNetworkImage<>("pong-agent.net");
+            network = new NeuralNetworkImage<>(filename);
         }
 
         Agent<GameAction, GameStateImage> agent = new QLearningAgentImage<>(
@@ -253,21 +219,8 @@ public class Pong {
         for (int i = 0; i < 500; i++) {
             PlayResult<GameStateImage> result = game.play();
             greedy.decrementEpsilon(i);
-            network.save("pong-agent.net");
+            network.save(filename);
             log.info("Runde: {}, Reward: {}, Epsilon: {}, Frames: {}", i, result.getReward(), greedy.getEpsilon(), result.getRounds());
         }
-/*
-        GameState state = env.reset();
-        boolean done = false;
-        int i = 0;
-        while (!done) {
-            String imageName = "output-" + String.format("%05d", i) + ".bmp";
-            Utils.saveImage(state, imageName);
-            StepResult<GameState> stepResult = env.step(GameAction.NOOP);
-            state = stepResult.getObservation();
-            done = stepResult.isDone();
-            i++;
-        }
- */
     }
 }

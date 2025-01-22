@@ -47,10 +47,6 @@ public class NeuralNetworkImage<O extends ObservationImage> implements NeuralNet
         }
     }
 
-    public void copyParams(NeuralNetworkImage<O> other) {
-        network.setParams(other.network.params());
-    }
-
     public void train(List<TrainingData<O>> trainingData) {
         INDArray[] inputs = trainingData.stream()
                 .map(TrainingData::getInput)

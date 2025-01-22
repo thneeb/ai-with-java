@@ -1,8 +1,9 @@
-package de.neebs.ai.control.rl.gym;
+package de.neebs.ai.control.rl;
 
-import de.neebs.ai.control.rl.*;
 import lombok.Getter;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 
 @Getter
@@ -35,8 +36,14 @@ public abstract class ObservationWrapper<A extends Action, Oin extends Observati
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public final Class<Oout> getObservationClass() {
-        return null;
+        try {
+            Type type = ((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[2];
+            return (Class<Oout>)Class.forName(type.getTypeName());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
