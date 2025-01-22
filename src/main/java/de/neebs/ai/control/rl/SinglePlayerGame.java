@@ -7,7 +7,7 @@ import java.util.*;
 
 @Slf4j
 @Getter
-public class SinglePlayerGame<A extends Enum<A>, O extends Observation, E extends Environment<A, O>> {
+public class SinglePlayerGame<A extends Action, O extends Observation, E extends Environment<A, O>> {
     private final E environment;
     private final Agent<A, O> agent;
     private final ReplayBuffer<A, O> replayBuffer = new ReplayBuffer<>(1000);

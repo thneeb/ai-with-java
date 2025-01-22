@@ -2,7 +2,7 @@ package de.neebs.ai.control.rl;
 
 import java.util.List;
 
-public interface Environment<A extends Enum<A>, O extends Observation> {
+public interface Environment<A extends Action, O extends Observation> {
     O reset();
 
     StepResult<O> step(A action);

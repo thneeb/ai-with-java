@@ -1,6 +1,6 @@
 package de.neebs.ai.control.rl;
 
-public class NextFreeAgent<A extends Enum<A>, O extends Observation> implements Agent<A, O>{
+public class NextFreeAgent<A extends Action, O extends Observation> implements Agent<A, O>{
     private final ActionFilter<A, O> actionFilter;
 
     public NextFreeAgent(ActionFilter<A, O> actionFilter) {

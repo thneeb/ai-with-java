@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter(value = AccessLevel.PROTECTED)
-public abstract class EnvironmentWrapper<A extends Enum<A>, O extends Observation> implements Environment<A, O> {
+public abstract class EnvironmentWrapper<A extends Action, O extends Observation> implements Environment<A, O> {
     private final Environment<A, O> environment;
 
     public EnvironmentWrapper(Environment<A, O> environment) {

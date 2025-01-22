@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 @Getter
-public class ActionSpace<T extends Enum<T>> {
+public class ActionSpace<T extends Action> {
     private static final Random RANDOM = new Random();
 
     private final List<T> actions;
@@ -24,19 +24,7 @@ public class ActionSpace<T extends Enum<T>> {
         this.actions = List.of(actionClass.getEnumConstants());
     }
 
-    public List<T> getAllActions() {
-        return List.of(actions.get(0).getDeclaringClass().getEnumConstants());
-    }
-
-    public boolean contains(T action) {
-        return actions.contains(action);
-    }
-
     public T getRandomAction() {
         return actions.get(RANDOM.nextInt(actions.size()));
-    }
-
-    public int ordinal(T action) {
-        return getAllActions().indexOf(action);
     }
 }

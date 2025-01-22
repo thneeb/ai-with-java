@@ -7,7 +7,7 @@ import java.util.*;
 
 @Getter
 @RequiredArgsConstructor
-public class QLearningAgentImage<A extends Enum<A>, O extends ObservationImage> implements LearningAgent<A, O> {
+public class QLearningAgentImage<A extends Action, O extends ObservationImage> implements LearningAgent<A, O> {
     private final NeuralNetworkImage<O> neuralNetwork;
     private final EpsilonGreedyPolicy policy;
     private final double gamma;
@@ -21,7 +21,7 @@ public class QLearningAgentImage<A extends Enum<A>, O extends ObservationImage> 
             double[] q = neuralNetwork.predict(observation);
             List<Double> iList = new ArrayList<>(Arrays.stream(q).boxed().toList());
             int i = iList.indexOf(Collections.max(iList));
-            return actionSpace.getAllActions().get(i);
+            return actionSpace.getActions().get(i);
         }
     }
 

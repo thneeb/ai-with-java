@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class Transition<A extends Enum<A>, O extends Observation> {
+public class Transition<A extends Action, O extends Observation> {
     private O observation;
     private A action;
     private double reward;

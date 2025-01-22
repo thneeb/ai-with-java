@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 public class Pong {
     private final GymClient gymClient;
 
-    enum GameAction {
+    enum GameAction implements Action {
         NOOP,
         FIRE,
         RIGHT,

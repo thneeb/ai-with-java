@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 @Getter(AccessLevel.PACKAGE)
-public class DoubleQLearningAgent<A extends Enum<A>, O extends Observation1D> extends QLearningAgent<A, O> implements TrainingListener {
+public class DoubleQLearningAgent<A extends Action, O extends Observation1D> extends QLearningAgent<A, O> implements TrainingListener {
     private final NeuralNetwork1D<O> targetNetwork;
 
     public DoubleQLearningAgent(NeuralNetwork1D<O> neuralNetwork, EpsilonGreedyPolicy policy, double gamma) {

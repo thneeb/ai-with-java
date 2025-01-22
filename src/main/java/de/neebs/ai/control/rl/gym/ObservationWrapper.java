@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public abstract class ObservationWrapper<A extends Enum<A>, Oin extends Observation, Oout extends Observation> implements Environment<A, Oout> {
+public abstract class ObservationWrapper<A extends Action, Oin extends Observation, Oout extends Observation> implements Environment<A, Oout> {
     private final Environment<A, Oin> environment;
 
     public ObservationWrapper(Environment<A, Oin> environment) {

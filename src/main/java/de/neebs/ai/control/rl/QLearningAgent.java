@@ -8,7 +8,7 @@ import java.util.*;
 
 @RequiredArgsConstructor
 @Getter(AccessLevel.PACKAGE)
-public class QLearningAgent<A extends Enum<A>, O extends Observation1D> implements LearningAgent<A, O> {
+public class QLearningAgent<A extends Action, O extends Observation1D> implements LearningAgent<A, O> {
     private final NeuralNetwork1D<O> neuralNetwork;
     private final EpsilonGreedyPolicy policy;
     private final double gamma;
@@ -22,7 +22,7 @@ public class QLearningAgent<A extends Enum<A>, O extends Observation1D> implemen
             double[] q = neuralNetwork.predict(observation);
             List<Double> iList = new ArrayList<>(Arrays.stream(q).boxed().toList());
             int i = iList.indexOf(Collections.max(iList));
-            return actionSpace.getAllActions().get(i);
+            return actionSpace.getActions().get(i);
         }
     }
 

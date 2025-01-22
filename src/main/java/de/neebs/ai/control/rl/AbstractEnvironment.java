@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public abstract class AbstractEnvironment<A extends Enum<A>, O extends Observation> implements Environment<A, O> {
+public abstract class AbstractEnvironment<A extends Action, O extends Observation> implements Environment<A, O> {
     private final ActionSpace<A> actionSpace;
     private final Class<O> observationClass;
     @Setter(value = AccessLevel.PROTECTED)

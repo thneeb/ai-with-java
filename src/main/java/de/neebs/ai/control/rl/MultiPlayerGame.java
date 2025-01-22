@@ -7,7 +7,7 @@ import java.util.*;
 
 @Slf4j
 @Getter
-public class MultiPlayerGame<A extends Enum<A>, O extends MultiPlayerState & Observation1D, E extends AbstractEnvironment<A, O>> {
+public class MultiPlayerGame<A extends Action, O extends MultiPlayerState & Observation1D, E extends AbstractEnvironment<A, O>> {
     private final E environment;
     private final List<Agent<A, O>> agents;
     private final ReplayBuffer<A, O> replayBuffer = new ReplayBuffer<>(1000);

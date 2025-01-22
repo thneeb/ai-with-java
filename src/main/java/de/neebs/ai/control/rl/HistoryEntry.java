@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class HistoryEntry<A extends Enum<A>, O extends Observation> {
+public class HistoryEntry<A extends Action, O extends Observation> {
     private final Agent<A, O> agent;
     private final O observation;
     private final A action;

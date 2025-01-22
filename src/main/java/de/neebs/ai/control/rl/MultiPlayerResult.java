@@ -11,7 +11,7 @@ import java.util.Map;
 @Setter
 @Builder
 @ToString
-public class MultiPlayerResult<A extends Enum<A>, O extends Observation> {
+public class MultiPlayerResult<A extends Action, O extends Observation> {
     private Map<Agent<A, O>, Double> rewards;
     private O observation;
     private int rounds;

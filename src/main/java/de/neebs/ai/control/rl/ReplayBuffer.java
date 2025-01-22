@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 @RequiredArgsConstructor
-public class ReplayBuffer<A extends Enum<A>, O extends Observation> {
+public class ReplayBuffer<A extends Action, O extends Observation> {
     private final List<Transition<A, O>> list = new ArrayList<>();
     private final int capacity;
     private static final Random RANDOM = new Random();

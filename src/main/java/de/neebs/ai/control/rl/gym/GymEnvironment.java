@@ -1,13 +1,10 @@
 package de.neebs.ai.control.rl.gym;
 
-import de.neebs.ai.control.rl.AbstractEnvironment;
-import de.neebs.ai.control.rl.Environment;
-import de.neebs.ai.control.rl.Observation;
-import de.neebs.ai.control.rl.StepResult;
+import de.neebs.ai.control.rl.*;
 
 import java.util.List;
 
-public class GymEnvironment<A extends Enum<A>, O extends Observation> extends AbstractEnvironment<A, O> {
+public class GymEnvironment<A extends Action, O extends Observation> extends AbstractEnvironment<A, O> {
     private final GymClient gymClient;
     private String instanceId;
 

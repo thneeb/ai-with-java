@@ -1,6 +1,6 @@
 package de.neebs.ai.control.rl;
 
-public class RandomAgent<A extends Enum<A>, O extends Observation> implements Agent<A, O> {
+public class RandomAgent<A extends Action, O extends Observation> implements Agent<A, O> {
     private final ActionFilter<A, O> actionFilter;
 
     public RandomAgent(ActionFilter<A, O> actionFilter) {
