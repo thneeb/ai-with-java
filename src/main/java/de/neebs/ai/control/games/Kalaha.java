@@ -1,6 +1,7 @@
 package de.neebs.ai.control.games;
 
 import de.neebs.ai.control.rl.*;
+import lombok.Getter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -8,11 +9,12 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 public class Kalaha {
-    enum Action {
+    enum GameAction implements Action {
         A1, A2, A3, A4, A5, A6
     }
 
-    static class GameState extends MultiPlayerObservation {
+    @Getter
+    public static class GameState extends MultiPlayerObservation {
         private int[][] board;
 
         public GameState() {
@@ -26,10 +28,6 @@ public class Kalaha {
                 board[0][i] = 4;
                 board[1][i] = 4;
             }
-        }
-
-        public int[][] getBoard() {
-            return board;
         }
 
         public int[] getBoard(int player) {
@@ -51,16 +49,16 @@ public class Kalaha {
         }
     }
 
-    static class ActionObservationFilter implements ActionFilter<Action, GameState> {
+    static class ActionObservationFilter implements ActionFilter<GameAction, GameState> {
         @Override
-        public ActionSpace<Action> filter(GameState observation, ActionSpace<Action> actions) {
-            List<Action> as = Arrays.stream(Action.values()).filter(f -> observation.getBoard(observation.getPlayer())[f.ordinal()] != 0).toList();
+        public ActionSpace<GameAction> filter(GameState observation, ActionSpace<GameAction> actions) {
+            List<GameAction> as = Arrays.stream(GameAction.values()).filter(f -> observation.getBoard(observation.getPlayer())[f.ordinal()] != 0).toList();
             return new ActionSpace<>(as);
         }
     }
 
-    static class Env extends AbstractEnvironment<Action, GameState> {
-        public Env(Class<Action> actions, Class<GameState> observation) {
+    static class Env extends AbstractEnvironment<GameAction, GameState> {
+        public Env(Class<GameAction> actions, Class<GameState> observation) {
             super(actions, observation);
         }
 
@@ -70,7 +68,7 @@ public class Kalaha {
         }
 
         @Override
-        public StepResult<GameState> step(Action action) {
+        public StepResult<GameState> step(GameAction action) {
             GameState gameState = getCurrentObservation().copy();
             int player = gameState.getPlayer();
             int[][] board = gameState.getBoard();

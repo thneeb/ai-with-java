@@ -71,7 +71,7 @@ public class Pong {
 
         @Override
         public double[] getFlattenedObservation() {
-            return new double[0];
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -240,15 +240,22 @@ public class Pong {
         }
     }
 
-    public void execute() {
+    public void execute(boolean startFresh) {
         Environment<GameAction, GameState3D> env3d =
                 new GymEnvironment<>(GameAction.class, GameState3D.class, gymClient).init("ale_py:ALE/Pong-v5");
         Environment<GameAction, GameStateImage> envImage = new ReduceImageSize(env3d);
 
-        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(1.0).epsilonMin(0.1).decreaseRate(0.01).build();
+        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.42).epsilonMin(0.1).decreaseRate(0.01).build();
+
+        NeuralNetworkImage network;
+        if (startFresh) {
+            network = new NeuralNetworkImage(new MyNeuralNetworkFactory());
+        } else {
+            network = new NeuralNetworkImage("pong-agent.net");
+        }
 
         Agent<GameAction, GameStateImage> agent = new QLearningAgentImage<>(
-                new NeuralNetworkImage(new MyNeuralNetworkFactory()),
+                network,
                 greedy,
                 0.99);
 
@@ -256,6 +263,7 @@ public class Pong {
         for (int i = 0; i < 500; i++) {
             PlayResult<GameStateImage> result = game.play();
             greedy.decrementEpsilon(i);
+            network.save("pong-agent.net");
             log.info("Runde: {}, Reward: {}, Epsilon: {}, Frames: {}", i, result.getReward(), greedy.getEpsilon(), result.getRounds());
         }
 /*

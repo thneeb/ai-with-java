@@ -39,6 +39,11 @@ paths:
   /pong:
     post:
       operationId: pong
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
       responses:
         '204':
           description: Returns the actual game field for the given id
@@ -70,6 +75,12 @@ paths:
                 type: object
 components:
   schemas:
+    Config:
+      type: object
+      properties:
+        startFresh:
+          type: boolean
+          default: false
     InstanceId:
       type: object
       properties:

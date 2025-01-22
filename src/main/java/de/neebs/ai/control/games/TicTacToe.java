@@ -207,7 +207,7 @@ public class TicTacToe  {
 
     public void execute() {
         int episodeCount = 700;
-        NeuralNetwork1D network = new NeuralNetwork1D(new MyNeuralNetworkFactory());
+        NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(new MyNeuralNetworkFactory());
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
 //        Agent<Action, GameState> oAgent = new QLearningAgent<>(network, greedy, 0.99);
         Agent<GameAction, GameState> oAgent = new DoubleQLearningAgent<>(network, greedy, 0.99);

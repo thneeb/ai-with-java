@@ -8,6 +8,7 @@ import de.neebs.ai.control.games.TicTacToe;
 import de.neebs.ai.control.rl.gym.GymClient;
 import de.neebs.aiwithjava.client.boundary.DefaultApi;
 import de.neebs.ai.control.perceptron.PerceptronMain;
+import de.neebs.aiwithjava.client.entity.Config;
 import de.neebs.aiwithjava.client.entity.InstanceId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -55,8 +56,11 @@ public class AiWithJavaController implements DefaultApi {
     }
 
     @Override
-    public ResponseEntity<Void> pong() {
-        pong.execute();
+    public ResponseEntity<Void> pong(Config config) {
+        if (config == null) {
+            config = new Config();
+        }
+        pong.execute(config.getStartFresh());
         return ResponseEntity.ok().build();
     }
 

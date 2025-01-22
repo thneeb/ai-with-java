@@ -13,9 +13,9 @@ import java.util.stream.IntStream;
 
 @Getter(AccessLevel.PACKAGE)
 public class DoubleQLearningAgent<A extends Enum<A>, O extends Observation> extends QLearningAgent<A, O> implements TrainingListener {
-    private final NeuralNetwork1D targetNetwork;
+    private final NeuralNetwork1D<O> targetNetwork;
 
-    public DoubleQLearningAgent(NeuralNetwork1D neuralNetwork, EpsilonGreedyPolicy policy, double gamma) {
+    public DoubleQLearningAgent(NeuralNetwork1D<O> neuralNetwork, EpsilonGreedyPolicy policy, double gamma) {
         super(neuralNetwork, policy, gamma);
         neuralNetwork.setListeners(this);
         this.targetNetwork = neuralNetwork.copy();
@@ -23,27 +23,27 @@ public class DoubleQLearningAgent<A extends Enum<A>, O extends Observation> exte
 
     @Override
     public void learn(List<Transition<A, O>> transitions) {
-        List<NeuralNetwork1D.TrainingData> trainingData = transitions.stream()
+        List<NeuralNetwork1D.TrainingData<O>> trainingData = transitions.stream()
                 .map(this::transition2TrainingData)
                 .toList();
         getNeuralNetwork().train(trainingData);
     }
 
-    private NeuralNetwork1D.TrainingData transition2TrainingData(Transition<A, O> transition) {
-        double[] qPrevious = getNeuralNetwork().predict(transition.getObservation().getFlattenedObservation());
+    private NeuralNetwork1D.TrainingData<O> transition2TrainingData(Transition<A, O> transition) {
+        double[] qPrevious = getNeuralNetwork().predict(transition.getObservation());
         double q;
         if (transition.getNextObservation() == null) {
             q = 0.0;
         } else {
-            double[] qNext = getNeuralNetwork().predict(transition.getNextObservation().getFlattenedObservation());
+            double[] qNext = getNeuralNetwork().predict(transition.getNextObservation());
             double qTemp = Arrays.stream(qNext).max().orElse(0.0);
             int index = IntStream.range(0, qNext.length).filter(i -> qNext[i] == qTemp).findFirst().orElseThrow();
-            double[] qTarget = getTargetNetwork().predict(transition.getNextObservation().getFlattenedObservation());
+            double[] qTarget = getTargetNetwork().predict(transition.getNextObservation());
             q = qTarget[index];
         }
         double target = transition.getReward() + q * getGamma();
         qPrevious[transition.getAction().ordinal()] = target;
-        return new NeuralNetwork1D.TrainingData(transition.getObservation().getFlattenedObservation(), qPrevious);
+        return new NeuralNetwork1D.TrainingData<>(transition.getObservation(), qPrevious);
     }
 
         @Override

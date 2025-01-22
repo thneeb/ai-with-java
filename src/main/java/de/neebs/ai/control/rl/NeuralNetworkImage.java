@@ -10,6 +10,7 @@ import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -21,18 +22,16 @@ public class NeuralNetworkImage {
         this.network = factory.createNeuralNetwork();
     }
 
+    public NeuralNetworkImage(String filename) {
+        try {
+            this.network = MultiLayerNetwork.load(new File(filename), true);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public void copyParams(NeuralNetworkImage other) {
         network.setParams(other.network.params());
-    }
-
-    public void train(double[][][] input, double[] output) {
-        INDArray myInput = Nd4j.create(input);
-        INDArray myOutput = Nd4j.create(output);
-        network.fit(myInput, myOutput);
-    }
-
-    public void train(TrainingData trainingData) {
-        train(List.of(trainingData));
     }
 
     public void train(List<TrainingData> trainingData) {
@@ -65,16 +64,12 @@ public class NeuralNetworkImage {
         }
     }
 
-    public NeuralNetworkImage copy() {
-        return new NeuralNetworkImage(() -> {
-            MultiLayerNetwork n = network.clone();
-            n.setParams(network.params());
-            return n;
-        });
-    }
-
-    public void setListeners(TrainingListener... listeners) {
-        network.setListeners(listeners);
+    public void save(String filename) {
+        try {
+            network.save(new File(filename), true);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Getter
