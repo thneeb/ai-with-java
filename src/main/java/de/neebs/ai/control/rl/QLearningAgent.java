@@ -12,16 +12,16 @@ public class QLearningAgent<A extends Action, O extends Observation1D> implement
     private final NeuralNetwork1D<O> neuralNetwork;
     private final EpsilonGreedyPolicy policy;
     private final double gamma;
-    private static final Random RANDOM = new Random();
 
     @Override
     public A chooseAction(O observation, ActionSpace<A> actionSpace) {
-        if (RANDOM.nextDouble() < policy.getEpsilon()) {
+        if (policy.isExploration()) {
             return actionSpace.getRandomAction();
         } else {
             double[] q = neuralNetwork.predict(observation);
             List<Double> iList = new ArrayList<>(Arrays.stream(q).boxed().toList());
-            int i = iList.indexOf(Collections.max(iList));
+            double max = Collections.max(iList);
+            int i = iList.indexOf(max);
             return actionSpace.getActions().get(i);
         }
     }

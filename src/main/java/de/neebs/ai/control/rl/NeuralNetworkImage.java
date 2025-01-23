@@ -12,13 +12,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Random;
 
 public class NeuralNetworkImage<O extends ObservationImage> implements NeuralNetwork<O> {
     private final MultiLayerNetwork network;
     private final Java2DNativeImageLoader loader = new Java2DNativeImageLoader();
 
     public NeuralNetworkImage(NeuralNetworkFactory factory) {
-        this.network = factory.createNeuralNetwork();
+        this.network = factory.createNeuralNetwork(new Random().nextLong());
     }
 
     public NeuralNetworkImage(String filename) {

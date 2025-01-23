@@ -28,4 +28,9 @@ public class ReplayBuffer<A extends Action, O extends Observation> {
     }
 
 
+    public List<Transition<A, O>> last(int batchSize) {
+        int size = Math.min(batchSize, list.size());
+        return list.subList(list.size() - size, list.size());
+    }
+
 }

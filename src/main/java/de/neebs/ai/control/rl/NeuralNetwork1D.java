@@ -12,12 +12,13 @@ import org.nd4j.linalg.factory.Nd4j;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Random;
 
 public class NeuralNetwork1D<O extends Observation1D> implements NeuralNetwork<O> {
     private final MultiLayerNetwork network;
 
-    public NeuralNetwork1D(NeuralNetworkFactory factory) {
-        this.network = factory.createNeuralNetwork();
+    public NeuralNetwork1D(NeuralNetworkFactory factory, long seed) {
+        this.network = factory.createNeuralNetwork(seed);
     }
 
     public NeuralNetwork1D(String filename) {
@@ -75,11 +76,11 @@ public class NeuralNetwork1D<O extends Observation1D> implements NeuralNetwork<O
     }
 
     public NeuralNetwork1D<O> copy() {
-        return new NeuralNetwork1D<>(() -> {
+        return new NeuralNetwork1D<>((long seed) -> {
             MultiLayerNetwork n = network.clone();
             n.setParams(network.params());
             return n;
-        });
+        }, new Random().nextLong());
     }
 
     public void setListeners(TrainingListener... listeners) {

@@ -151,7 +151,7 @@ public class Pong {
 
     static class MyNeuralNetworkFactory implements NeuralNetworkFactory {
         @Override
-        public MultiLayerNetwork createNeuralNetwork() {
+        public MultiLayerNetwork createNeuralNetwork(long seed) {
             MultiLayerNetwork model = new MultiLayerNetwork(new NeuralNetConfiguration.Builder()
                     .seed(123)
                     .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
@@ -218,7 +218,7 @@ public class Pong {
         SinglePlayerGame<GameAction, GameStateImage, Environment<GameAction, GameStateImage>> game = new SinglePlayerGame<>(envImage, agent);
         for (int i = 0; i < 500; i++) {
             PlayResult<GameStateImage> result = game.play();
-            greedy.decrementEpsilon(i);
+            greedy.decrease(i);
             network.save(filename);
             log.info("Runde: {}, Reward: {}, Epsilon: {}, Frames: {}", i, result.getReward(), greedy.getEpsilon(), result.getRounds());
         }

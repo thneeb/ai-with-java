@@ -41,7 +41,7 @@ public class MultiPlayerGame<A extends Action, O extends MultiPlayerState & Obse
 
         Collections.reverse(history);
         for (Agent<A, O> a : agents) {
-//            if (a instanceof LearningAgent<A, O> learningAgent) {
+            if (a instanceof LearningAgent<A, O> learningAgent) {
                 List<HistoryEntry<A, O>> ownMoves = history.stream().filter(f -> f.getAgent().equals(a)).toList();
                 for (int i = 0; i < ownMoves.size(); i++) {
                     HistoryEntry<A, O> entry = ownMoves.get(i);
@@ -59,12 +59,12 @@ public class MultiPlayerGame<A extends Action, O extends MultiPlayerState & Obse
                             .nextObservation(i == 0 ? null : ownMoves.get(i - 1).getObservation())
                             .build());
                 }
-//            }
+            }
         }
 
         for (Agent<A, O> a : agents) {
             if (a instanceof LearningAgent<A, O> learningAgent) {
-                List<Transition<A, O>> transitions = replayBuffer.sample(10);
+                List<Transition<A, O>> transitions = replayBuffer.sample(history.size());
                 learningAgent.learn(transitions);
             }
         }

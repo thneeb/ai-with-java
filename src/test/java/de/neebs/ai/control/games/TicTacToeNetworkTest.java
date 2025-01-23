@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 class TicTacToeNetworkTest {
     @Test
@@ -12,7 +13,7 @@ class TicTacToeNetworkTest {
         TicTacToe.GameState gameState = new TicTacToe.GameState();
         gameState.setPlayer(1);
         gameState.getBoard()[TicTacToe.GameAction.MIDDLE_MIDDLE.ordinal()] = 1;
-        NeuralNetwork1D<TicTacToe.GameState> network = new NeuralNetwork1D<>(new TicTacToe.MyNeuralNetworkFactory());
+        NeuralNetwork1D<TicTacToe.GameState> network = new NeuralNetwork1D<>(new TicTacToe.MyNeuralNetworkFactory(), new Random().nextLong());
         for (TicTacToe.GameAction a : TicTacToe.GameAction.values()) {
             double[] prediction = network.predict(gameState);
             prediction[a.ordinal()] = gameState.getFlattenedObservation()[a.ordinal()] == 0 ? 0 : -1;
@@ -23,7 +24,7 @@ class TicTacToeNetworkTest {
 
     @Test
     void testOneGame() {
-        NeuralNetwork1D<TicTacToe.GameState> network = new NeuralNetwork1D<>(new TicTacToe.MyNeuralNetworkFactory());
+        NeuralNetwork1D<TicTacToe.GameState> network = new NeuralNetwork1D<>(new TicTacToe.MyNeuralNetworkFactory(), new Random().nextLong());
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0).epsilonMin(0).decreaseRate(0.001).step(1).build();
         Agent<TicTacToe.GameAction, TicTacToe.GameState> oAgent = new QLearningAgent<>(network, greedy, 0.99);
         Agent<TicTacToe.GameAction, TicTacToe.GameState> xAgent = new NextFreeAgent<>(new TicTacToe.ActionObservationFilter());

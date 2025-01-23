@@ -1,11 +1,13 @@
 package de.neebs.ai.control.rl;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Random;
+
 @Builder
 public class EpsilonGreedyPolicy {
+    private static final Random RANDOM = new Random();
     @Getter
     private double epsilon;
     private final double epsilonMin;
@@ -20,13 +22,18 @@ public class EpsilonGreedyPolicy {
         this.step = (step == 0 ? 1 : step);
     }
 
-    public void decrementEpsilon(int step) {
+    public void decrease(int step) {
         if (step % this.step == 0) {
-            decrementEpsilon();
+            decrease();
         }
     }
 
-    public void decrementEpsilon() {
+    public boolean isExploration() {
+        return RANDOM.nextDouble() < getEpsilon();
+
+    }
+
+    public void decrease() {
         epsilon = Math.max(epsilonMin, epsilon - decreaseRate);
     }
 }

@@ -172,7 +172,7 @@ public class TicTacToe  {
 
     public static class MyNeuralNetworkFactory implements NeuralNetworkFactory {
         @Override
-        public MultiLayerNetwork createNeuralNetwork() {
+        public MultiLayerNetwork createNeuralNetwork(long seed) {
             int input = new GameState().getFlattenedObservation().length;
             int output = GameAction.values().length;
             MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
@@ -207,7 +207,7 @@ public class TicTacToe  {
 
     public void execute() {
         int episodeCount = 300;
-        NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(new MyNeuralNetworkFactory());
+        NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(new MyNeuralNetworkFactory(), new Random().nextLong());
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
 //        Agent<Action, GameState> oAgent = new QLearningAgent<>(network, greedy, 0.99);
         Agent<GameAction, GameState> oAgent = new DoubleQLearningAgent<>(network, greedy, 0.99);
@@ -219,7 +219,7 @@ public class TicTacToe  {
         Map<Agent<GameAction, GameState>, Integer> result = new HashMap<>();
         for (int i = 1; i <= episodeCount; i++) {
             MultiPlayerResult<GameAction, GameState> multiPlayerResult = ticTacToe.play();
-            greedy.decrementEpsilon(i);
+            greedy.decrease(i);
 
             for (Map.Entry<Agent<GameAction, GameState>, Double> entry : multiPlayerResult.getRewards().entrySet()) {
                 result.put(entry.getKey(), result.getOrDefault(entry.getKey(), 0) + (entry.getValue() == 1 ? 1 : 0));

@@ -33,9 +33,52 @@ paths:
   /connectfour:
     post:
       operationId: connectFour
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
       responses:
         '204':
           description: Returns the actual game field for the given id
+  /connectfour/interactive:
+    post:
+      operationId: resetConnectFour
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                starter:
+                  $ref: '#/components/schemas/PlayerType'
+      responses:
+        '200':
+          description: Returns the actual game field for the given id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Observation2D'
+  /connectfour/interactive/actions/{actionId}:
+    parameters:
+      - name: actionId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: stepConnectFour
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Observation2D'
+      responses:
+        '200':
+          description: Returns the actual game field for the given id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Observation2D'
   /pong:
     post:
       operationId: pong
@@ -81,20 +124,35 @@ components:
         startFresh:
           type: boolean
           default: false
+        saveModel:
+          type: boolean
+          default: false
+        saveInterval:
+          type: integer
+          default: 1000
+        episodes:
+          type: integer
+          default: 1000
     InstanceId:
       type: object
       properties:
         instanceId:
           type: string
-    Region:
+    Observation2D:
+      properties:
+        py:
+          type: integer
+        board:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+        done:
+          type: boolean
+        winner:
+          type: string
+    PlayerType:
       enum:
-        - CALIFORNIA
-        - GRAND_CANYON
-        - UPPER_WEST
-        - MONTANA
-        - GREAT_LAKES
-        - NEW_YORK
-        - WASHINGTON
-        - FLORIDA
-        - CENTRAL
-        - TEXAS
+        - COMPUTER
+        - HUMAN
