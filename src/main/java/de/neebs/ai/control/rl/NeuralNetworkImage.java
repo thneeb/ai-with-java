@@ -14,34 +14,29 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
-public class NeuralNetworkImage<O extends ObservationImage> implements NeuralNetwork<O> {
-    private final MultiLayerNetwork network;
+public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDl4jNetwork<O> {
     private final Java2DNativeImageLoader loader = new Java2DNativeImageLoader();
 
-    public NeuralNetworkImage(NeuralNetworkFactory factory) {
-        this.network = factory.createNeuralNetwork(new Random().nextLong());
+    public NeuralNetworkImage(NeuralNetworkFactory factory, long seed) {
+        super(factory, seed);
     }
 
     public NeuralNetworkImage(String filename) {
-        try {
-            this.network = MultiLayerNetwork.load(new File(filename), true);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+        super(filename);
     }
 
     @Override
     public void train(O observation, double[] target) {
         INDArray input = asMatrix(observation.getObservation());
         INDArray output = Nd4j.create(target);
-        network.fit(new DataSet(input, output));
+        getNetwork().fit(new DataSet(input, output));
     }
 
     @Override
     public double[] predict(O observation) {
         try {
             INDArray myInput = loader.asMatrix(observation.getObservation());
-            INDArray myOutput = network.output(myInput);
+            INDArray myOutput = getNetwork().output(myInput);
             return myOutput.toDoubleVector();
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -58,7 +53,7 @@ public class NeuralNetworkImage<O extends ObservationImage> implements NeuralNet
                 .map(TrainingData::getOutput)
                 .toArray(double[][]::new);
         DataSet dataSet = new DataSet(Nd4j.concat(0, inputs), Nd4j.create(outputs));
-        network.fit(dataSet);
+        getNetwork().fit(dataSet);
     }
 
     private INDArray asMatrix(BufferedImage input) {
@@ -69,18 +64,17 @@ public class NeuralNetworkImage<O extends ObservationImage> implements NeuralNet
         }
     }
 
-    public void save(String filename) {
-        try {
-            network.save(new File(filename), true);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+    @Override
+    public QNetwork<O> copy() {
+        return new NeuralNetworkImage<>((long seed) -> {
+            MultiLayerNetwork n = getNetwork().clone();
+            n.setParams(getNetwork().params());
+            return n;
+        }, new Random().nextLong());
     }
 
-    @Getter
-    @Builder
-    public static class TrainingData<O extends ObservationImage> {
-        private O input;
-        private double[] output;
+    @Override
+    public void copyParams(QNetwork<O> other) {
+        super.copyParams((AbstractDl4jNetwork<O>) other);
     }
 }

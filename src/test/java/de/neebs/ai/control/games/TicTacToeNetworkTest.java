@@ -17,7 +17,7 @@ class TicTacToeNetworkTest {
         for (TicTacToe.GameAction a : TicTacToe.GameAction.values()) {
             double[] prediction = network.predict(gameState);
             prediction[a.ordinal()] = gameState.getFlattenedObservation()[a.ordinal()] == 0 ? 0 : -1;
-            network.train(new NeuralNetwork1D.TrainingData<>(gameState, prediction));
+            network.train(new TrainingData<>(gameState, prediction));
         }
         System.out.println(Arrays.toString(network.predict(gameState)));
     }

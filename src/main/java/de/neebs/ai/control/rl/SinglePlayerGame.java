@@ -36,7 +36,7 @@ public class SinglePlayerGame<A extends Action, O extends Observation, E extends
                     .build());
 
             if (agent instanceof LearningAgent<A, O> learningAgent) {
-                List<Transition<A, O>> transitions = replayBuffer.sample(10);
+                List<Transition<A, O>> transitions = replayBuffer.sample(100);
                 learningAgent.learn(transitions);
             }
 

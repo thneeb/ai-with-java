@@ -41,7 +41,7 @@ public class MultiPlayerGame<A extends Action, O extends MultiPlayerState & Obse
 
         Collections.reverse(history);
         for (Agent<A, O> a : agents) {
-            if (a instanceof LearningAgent<A, O> learningAgent) {
+            if (a instanceof LearningAgent<A, O>) {
                 List<HistoryEntry<A, O>> ownMoves = history.stream().filter(f -> f.getAgent().equals(a)).toList();
                 for (int i = 0; i < ownMoves.size(); i++) {
                     HistoryEntry<A, O> entry = ownMoves.get(i);

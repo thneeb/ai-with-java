@@ -205,12 +205,12 @@ public class Pong {
 
         NeuralNetworkImage<GameStateImage> network;
         if (startFresh) {
-            network = new NeuralNetworkImage<>(new MyNeuralNetworkFactory());
+            network = new NeuralNetworkImage<>(new MyNeuralNetworkFactory(), 123);
         } else {
             network = new NeuralNetworkImage<>(filename);
         }
 
-        Agent<GameAction, GameStateImage> agent = new QLearningAgentImage<>(
+        Agent<GameAction, GameStateImage> agent = new QLearningAgent<>(
                 network,
                 greedy,
                 0.99);

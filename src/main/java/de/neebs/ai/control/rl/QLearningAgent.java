@@ -8,8 +8,8 @@ import java.util.*;
 
 @RequiredArgsConstructor
 @Getter(AccessLevel.PACKAGE)
-public class QLearningAgent<A extends Action, O extends Observation1D> implements LearningAgent<A, O> {
-    private final NeuralNetwork1D<O> neuralNetwork;
+public class QLearningAgent<A extends Action, O extends Observation> implements LearningAgent<A, O> {
+    private final QNetwork<O> neuralNetwork;
     private final EpsilonGreedyPolicy policy;
     private final double gamma;
 
@@ -28,13 +28,13 @@ public class QLearningAgent<A extends Action, O extends Observation1D> implement
 
     @Override
     public void learn(List<Transition<A, O>> transitions) {
-        List<NeuralNetwork1D.TrainingData<O>> trainingData = transitions.stream()
+        List<TrainingData<O>> trainingData = transitions.stream()
                 .map(this::transition2TrainingData)
                 .toList();
         getNeuralNetwork().train(trainingData);
     }
 
-    private NeuralNetwork1D.TrainingData<O> transition2TrainingData(Transition<A, O> transition) {
+    private TrainingData<O> transition2TrainingData(Transition<A, O> transition) {
         double[] qPrevious = getNeuralNetwork().predict(transition.getObservation());
         double q;
         if (transition.getNextObservation() == null) {
@@ -45,6 +45,6 @@ public class QLearningAgent<A extends Action, O extends Observation1D> implement
         }
         double target = transition.getReward() + q * getGamma();
         qPrevious[transition.getAction().ordinal()] = target;
-        return new NeuralNetwork1D.TrainingData<O>(transition.getObservation(), qPrevious);
+        return new TrainingData<>(transition.getObservation(), qPrevious);
     }
 }

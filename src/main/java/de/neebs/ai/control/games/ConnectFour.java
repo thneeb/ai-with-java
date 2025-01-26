@@ -1,23 +1,27 @@
 package de.neebs.ai.control.games;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.neebs.ai.control.rl.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.conf.inputs.InputType;
+import org.deeplearning4j.nn.conf.layers.*;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.learning.config.RmsProp;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
@@ -30,7 +34,7 @@ public class ConnectFour {
 
     @Getter
     @Setter
-    public static class GameState extends MultiPlayerState implements Observation1D {
+    public static class GameState extends MultiPlayerState implements Observation1D, Observation2D {
         private double[][] board;
 
         public GameState() {
@@ -47,8 +51,28 @@ public class ConnectFour {
         }
 
         @Override
+        @JsonIgnore
+        public double[][] getObservation() {
+            return board;
+        }
+
+        @Override
+        @JsonIgnore
         public double[] getFlattenedObservation() {
             return DoubleStream.concat(Stream.of(board).flatMapToDouble(Arrays::stream), DoubleStream.of(getPlayer())).toArray();
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.deepHashCode(board) + getPlayer();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof GameState state) {
+                return Arrays.deepEquals(board, state.board) && getPlayer() == state.getPlayer();
+            }
+            return false;
         }
 
         public GameState copy() {
@@ -167,6 +191,7 @@ public class ConnectFour {
 
         private final ActionFilter<GameAction, GameState> actionFilter;
         private final EpsilonGreedyPolicy policy;
+        private final int depth;
 
         private int[] minimax(GameState state, ActionSpace<GameAction> actionSpace, int depth, int alpha, int beta, boolean maximizingPlayer) {
             try {
@@ -223,9 +248,10 @@ public class ConnectFour {
             }
         }
 
-        public ConnectFourAgent(ActionFilter<GameAction, GameState> actionFilter, EpsilonGreedyPolicy policy) {
+        public ConnectFourAgent(ActionFilter<GameAction, GameState> actionFilter, EpsilonGreedyPolicy policy, int depth) {
             this.actionFilter = actionFilter;
             this.policy = policy;
+            this.depth = depth;
         }
 
         @Override
@@ -234,13 +260,90 @@ public class ConnectFour {
                 return actionFilter.filter(observation, actionSpace).getRandomAction();
             } else {
                 player = observation.getPlayer();
-                int[] result = minimax(observation, actionSpace, 4, Integer.MIN_VALUE, Integer.MAX_VALUE, true);
+                int[] result = minimax(observation, actionSpace, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, true);
                 return actionSpace.getActions().get(result[0]);
             }
         }
     }
 
-    static class MyNeuralNetworkFactory implements NeuralNetworkFactory {
+    static class DoNotWinAgent implements Agent<ConnectFour.GameAction, ConnectFour.GameState> {
+        private final ConnectFour.ActionObservationFilter actionObservationFilter;
+
+        DoNotWinAgent(ConnectFour.ActionObservationFilter actionObservationFilter) {
+            this.actionObservationFilter = actionObservationFilter;
+        }
+        @Override
+        public ConnectFour.GameAction chooseAction(ConnectFour.GameState observation, ActionSpace<ConnectFour.GameAction> actionSpace) {
+            try {
+                actionSpace = actionObservationFilter.filter(observation, actionSpace);
+                for (ConnectFour.GameAction action : actionSpace.getActions()) {
+                    ConnectFour.GameState state = observation.copy();
+                    state.nextPlayer();
+                    ConnectFour.Utils.step(state, action);
+                    if (ConnectFour.Utils.checkWin(state) > 0) {
+                        return action;
+                    }
+                }
+                for (ConnectFour.GameAction action : actionSpace.getActions()) {
+                    ConnectFour.GameState state = observation.copy();
+                    ConnectFour.Utils.step(state, action);
+                    if (ConnectFour.Utils.checkWin(state) == 0) {
+                        return action;
+                    }
+                }
+                return actionSpace.getRandomAction();
+            } catch (IllegalMoveException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    static class NeuralNetworkFactory2D implements NeuralNetworkFactory {
+        @Override
+        public MultiLayerNetwork createNeuralNetwork(long seed) {
+            MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                    .seed(12345) // Reproduzierbarkeit
+                    .weightInit(WeightInit.XAVIER) // Initialisierung für stabile Gradienten
+                    .updater(new Adam(0.001)) // Adam-Optimizer mit Lernrate 0.001
+                    .list()
+                    // 1. Convolutional Layer
+                    .layer(0, new ConvolutionLayer.Builder()
+                            .kernelSize(3, 3) // 3x3 Filter
+                            .stride(1, 1) // Schrittweite
+                            .nIn(1) // Eingabekanal
+                            .nOut(32) // 32 Filter
+                            .activation(Activation.LEAKYRELU) // Aktivierungsfunktion
+                            .build())
+                    .layer(1, new BatchNormalization()) // Batch-Normalisierung
+                    // 2. Convolutional Layer
+                    .layer(2, new ConvolutionLayer.Builder()
+                            .kernelSize(3, 3)
+                            .stride(1, 1)
+                            .nOut(64) // 64 Filter
+                            .activation(Activation.LEAKYRELU)
+                            .build())
+                    .layer(3, new BatchNormalization())
+                    // 3. Fully Connected Layer
+                    .layer(4, new DenseLayer.Builder()
+                            .nOut(128) // 128 Neuronen
+                            .activation(Activation.LEAKYRELU)
+                            .dropOut(0.5) // Dropout für Regularisierung
+                            .build())
+                    // Output Layer
+                    .layer(5, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                            .nOut(7) // 7 mögliche Züge
+                            .activation(Activation.IDENTITY) // Wahrscheinlichkeitsverteilung
+                            .build())
+                    // Eingabetyp definieren: 6x7 Raster mit einem Kanal
+                    .setInputType(InputType.convolutional(6, 7, 1))
+                    .build();
+            MultiLayerNetwork model = new MultiLayerNetwork(conf);
+            model.init();
+            return model;
+        }
+    }
+
+    static class NeuralNetworkFactory1D implements NeuralNetworkFactory {
         @Override
         public MultiLayerNetwork createNeuralNetwork(long seed) {
             int input = new GameState().getFlattenedObservation().length;
@@ -248,7 +351,6 @@ public class ConnectFour {
             MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
 //                    .updater(new Adam(0.001))
                     .updater(RmsProp.builder().learningRate(0.00025).build())
-                    .miniBatch(false)
                     .weightInit(WeightInit.XAVIER)
                     .seed(seed)
 //                    .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
@@ -302,19 +404,37 @@ public class ConnectFour {
     }
 
     public void execute(boolean startFresh, boolean saveModel, Integer saveInterval, Integer episodes) {
-        String filename = "connect-four-agent.zip";
+        String filename = "connect-four-agent-ql.json";
         Env environment = new Env(GameAction.class, GameState.class);
+        /*
         NeuralNetwork1D<GameState> network;
         if (startFresh) {
-            network = new NeuralNetwork1D<>(new MyNeuralNetworkFactory(), new Random().nextLong());
+            network = new NeuralNetwork1D<>(new NeuralNetworkFactory1D(), new Random().nextLong());
         } else {
             network = new NeuralNetwork1D<>(filename);
         }
-        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(1).epsilonMin(0.01).decreaseRate(0.001).step(3).build();
+
+         */
+        /*
+        NeuralNetwork2D<GameState> network;
+        if (startFresh) {
+            network = new NeuralNetwork2D<>(new NeuralNetworkFactory2D(), new Random().nextLong());
+        } else {
+            network = new NeuralNetwork2D<>(filename);
+        }
+         */
+        SimpleQNetwork<GameState, GameAction> network;
+        if (startFresh) {
+            network = new SimpleQNetwork<>(0.001, GameAction.class);
+        } else {
+            network = loadSimpleQNetwork(filename);
+        }
+        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(1).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
         Agent<GameAction, GameState> red = new QLearningAgent<>(network, greedy, 0.99);
 //        Agent<Action, GameState> red = new DoubleQLearningAgent<>(network, greedy, 0.99);
-        Agent<GameAction, GameState> yellow = new ConnectFourAgent(new ActionObservationFilter(), greedy);
+//        Agent<GameAction, GameState> yellow = new ConnectFourAgent(new ActionObservationFilter(), greedy, 4);
 //        Agent<GameAction, GameState> yellow = new RandomAgent<>(new ActionObservationFilter());
+        Agent<GameAction, GameState> yellow = new DoNotWinAgent(new ActionObservationFilter());
         MultiPlayerGame<GameAction, GameState, Env> connectFour = new MultiPlayerGame<>(environment, Arrays.asList(red, yellow));
         List<LogEntry> result = new ArrayList<>();
         for (int i = 1; i <= episodes; i++) {
@@ -345,12 +465,28 @@ public class ConnectFour {
                 result = new ArrayList<>();
             }
             if (saveInterval != null && i % saveInterval == 0 && saveModel) {
+                log.info("Misses: {}, Hits: {}, Size: {}", network.getMiss(), network.getHit(), network.getSize());
                 network.save(filename);
+                log.info("Model saved to {}", filename);
             }
         }
+        log.info("Misses: {}, Hits: {}, Size: {}", network.getMiss(), network.getHit(), network.getSize());
         if (saveModel) {
             network.save(filename);
+            log.info("Model saved to {}", filename);
         }
+    }
+
+    private static SimpleQNetwork<GameState, GameAction> loadSimpleQNetwork(String filename) {
+        SimpleQNetwork<GameState, GameAction> network;
+        File file = new File(filename);
+        try {
+            List<SimpleQNetwork.SaveData<GameState>> saveData = new ObjectMapper().readValue(file, new TypeReference<>() {});
+            network = new SimpleQNetwork<>(saveData.stream().collect(Collectors.toMap(SimpleQNetwork.SaveData::getObservation, SimpleQNetwork.SaveData::getWeights)), 0.001, GameAction.class);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+        return network;
     }
 
     public GameState reset(String starter) {
@@ -374,15 +510,20 @@ public class ConnectFour {
     }
 
     private StepResult<GameState> computerMove(GameState gameState) {
-        String filename = "connect-four-agent.zip";
+        String filename = "connect-four-agent-ql.json";
+//        String filename = "connect-four-agent.zip";
         Env environment = new Env(GameAction.class, GameState.class);
         environment.setObservation(gameState);
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
-        NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(filename);
-        Agent<GameAction, GameState> red = new QLearningAgent<>(network, greedy, 0.99);
+//        NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(filename);
+        SimpleQNetwork<GameState, GameAction> network = loadSimpleQNetwork(filename);
+        QLearningAgent<GameAction, GameState> red = new QLearningAgent<>(network, greedy, 0.99);
 //        Agent<GameAction, GameState> red = new ConnectFourAgent(new ActionObservationFilter(), greedy);
         GameAction gameAction = red.chooseAction(gameState, new ActionSpace<>(GameAction.class));
-        return environment.step(gameAction);
+        StepResult<GameState> result = environment.step(gameAction);
+        red.learn(List.of(Transition.<GameAction, GameState>builder().observation(gameState).action(gameAction).reward(result.getReward()).nextObservation(result.getObservation()).build()));
+        network.save(filename);
+        return result;
     }
 
     private boolean humanMove(GameState gameState, GameAction action) {

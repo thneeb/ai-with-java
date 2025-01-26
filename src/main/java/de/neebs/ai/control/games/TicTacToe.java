@@ -209,8 +209,8 @@ public class TicTacToe  {
         int episodeCount = 300;
         NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(new MyNeuralNetworkFactory(), new Random().nextLong());
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
-//        Agent<Action, GameState> oAgent = new QLearningAgent<>(network, greedy, 0.99);
-        Agent<GameAction, GameState> oAgent = new DoubleQLearningAgent<>(network, greedy, 0.99);
+//        Agent<GameAction, GameState> oAgent = new QLearningAgent1D<>(network, greedy, 0.99);
+        Agent<GameAction, GameState> oAgent = new DoubleQLearningAgent<>(network, greedy, 0.99, 100);
         Agent<GameAction, GameState> xAgent = new MyTicTacToeAgent();
 //        Agent<Action, GameState> xAgent = new RandomAgent();
 //        Agent<Action, GameState> xAgent = new NextFreeAgent();
