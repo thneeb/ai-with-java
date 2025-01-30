@@ -1,8 +1,6 @@
 package de.neebs.ai.control.games;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.neebs.ai.control.rl.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -19,9 +17,7 @@ import org.nd4j.linalg.learning.config.RmsProp;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
@@ -34,6 +30,8 @@ public class ConnectFour {
 
     @Getter
     @Setter
+    @ToString
+    @EqualsAndHashCode(callSuper = true)
     public static class GameState extends MultiPlayerState implements Observation1D, Observation2D {
         private double[][] board;
 
@@ -60,19 +58,6 @@ public class ConnectFour {
         @JsonIgnore
         public double[] getFlattenedObservation() {
             return DoubleStream.concat(Stream.of(board).flatMapToDouble(Arrays::stream), DoubleStream.of(getPlayer())).toArray();
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.deepHashCode(board) + getPlayer();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof GameState state) {
-                return Arrays.deepEquals(board, state.board) && getPlayer() == state.getPlayer();
-            }
-            return false;
         }
 
         public GameState copy() {
@@ -350,7 +335,7 @@ public class ConnectFour {
             int output = GameAction.values().length;
             MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
 //                    .updater(new Adam(0.001))
-                    .updater(RmsProp.builder().learningRate(0.00025).build())
+                    .updater(RmsProp.builder().learningRate(0.001).build())
                     .weightInit(WeightInit.XAVIER)
                     .seed(seed)
 //                    .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
@@ -404,17 +389,14 @@ public class ConnectFour {
     }
 
     public void execute(boolean startFresh, boolean saveModel, Integer saveInterval, Integer episodes) {
-        String filename = "connect-four-agent-ql.json";
+        String filename = "connect-four-agent-1d.zip";
         Env environment = new Env(GameAction.class, GameState.class);
-        /*
         NeuralNetwork1D<GameState> network;
         if (startFresh) {
             network = new NeuralNetwork1D<>(new NeuralNetworkFactory1D(), new Random().nextLong());
         } else {
             network = new NeuralNetwork1D<>(filename);
         }
-
-         */
         /*
         NeuralNetwork2D<GameState> network;
         if (startFresh) {
@@ -423,18 +405,22 @@ public class ConnectFour {
             network = new NeuralNetwork2D<>(filename);
         }
          */
-        SimpleQNetwork<GameState, GameAction> network;
+        /*
+        SingleFileQNetwork<GameState, GameAction> network;
         if (startFresh) {
-            network = new SimpleQNetwork<>(0.001, GameAction.class);
+            network = new SingleFileQNetwork<>(0.001, GameAction.class);
         } else {
-            network = loadSimpleQNetwork(filename);
+            network = new SingleFileQNetwork<>(filename, GameState.class, 0.001, GameAction.class);
         }
+         */
+//        MultiFileQNetwork<GameState, GameAction> network = new MultiFileQNetwork<>(0.001, GameAction.class);
+
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(1).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
         Agent<GameAction, GameState> red = new QLearningAgent<>(network, greedy, 0.99);
 //        Agent<Action, GameState> red = new DoubleQLearningAgent<>(network, greedy, 0.99);
-//        Agent<GameAction, GameState> yellow = new ConnectFourAgent(new ActionObservationFilter(), greedy, 4);
+        Agent<GameAction, GameState> yellow = new ConnectFourAgent(new ActionObservationFilter(), greedy, 7);
 //        Agent<GameAction, GameState> yellow = new RandomAgent<>(new ActionObservationFilter());
-        Agent<GameAction, GameState> yellow = new DoNotWinAgent(new ActionObservationFilter());
+//        Agent<GameAction, GameState> yellow = new DoNotWinAgent(new ActionObservationFilter());
         MultiPlayerGame<GameAction, GameState, Env> connectFour = new MultiPlayerGame<>(environment, Arrays.asList(red, yellow));
         List<LogEntry> result = new ArrayList<>();
         for (int i = 1; i <= episodes; i++) {
@@ -465,28 +451,16 @@ public class ConnectFour {
                 result = new ArrayList<>();
             }
             if (saveInterval != null && i % saveInterval == 0 && saveModel) {
-                log.info("Misses: {}, Hits: {}, Size: {}", network.getMiss(), network.getHit(), network.getSize());
+//                log.info("Misses: {}, Hits: {}", network.getMiss(), network.getHit());
                 network.save(filename);
                 log.info("Model saved to {}", filename);
             }
         }
-        log.info("Misses: {}, Hits: {}, Size: {}", network.getMiss(), network.getHit(), network.getSize());
+//        log.info("Misses: {}, Hits: {}, Percentage: {}", network.getMiss(), network.getHit(), (double)network.getMiss() / (network.getMiss() + network.getHit()));
         if (saveModel) {
             network.save(filename);
             log.info("Model saved to {}", filename);
         }
-    }
-
-    private static SimpleQNetwork<GameState, GameAction> loadSimpleQNetwork(String filename) {
-        SimpleQNetwork<GameState, GameAction> network;
-        File file = new File(filename);
-        try {
-            List<SimpleQNetwork.SaveData<GameState>> saveData = new ObjectMapper().readValue(file, new TypeReference<>() {});
-            network = new SimpleQNetwork<>(saveData.stream().collect(Collectors.toMap(SimpleQNetwork.SaveData::getObservation, SimpleQNetwork.SaveData::getWeights)), 0.001, GameAction.class);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-        return network;
     }
 
     public GameState reset(String starter) {
@@ -510,19 +484,19 @@ public class ConnectFour {
     }
 
     private StepResult<GameState> computerMove(GameState gameState) {
-        String filename = "connect-four-agent-ql.json";
-//        String filename = "connect-four-agent.zip";
+//        String filename = "connect-four-agent-ql.json";
+        String filename = "connect-four-agent-1d.zip";
         Env environment = new Env(GameAction.class, GameState.class);
         environment.setObservation(gameState);
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
-//        NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(filename);
-        SimpleQNetwork<GameState, GameAction> network = loadSimpleQNetwork(filename);
-        QLearningAgent<GameAction, GameState> red = new QLearningAgent<>(network, greedy, 0.99);
-//        Agent<GameAction, GameState> red = new ConnectFourAgent(new ActionObservationFilter(), greedy);
+        NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(filename);
+//        SingleFileQNetwork<GameState, GameAction> network = new SingleFileQNetwork<>(filename, GameState.class, 0.001, GameAction.class);
+//        QLearningAgent<GameAction, GameState> red = new QLearningAgent<>(network, greedy, 0.99);
+        Agent<GameAction, GameState> red = new ConnectFourAgent(new ActionObservationFilter(), greedy, 4);
         GameAction gameAction = red.chooseAction(gameState, new ActionSpace<>(GameAction.class));
         StepResult<GameState> result = environment.step(gameAction);
-        red.learn(List.of(Transition.<GameAction, GameState>builder().observation(gameState).action(gameAction).reward(result.getReward()).nextObservation(result.getObservation()).build()));
-        network.save(filename);
+//        red.learn(List.of(Transition.<GameAction, GameState>builder().observation(gameState).action(gameAction).reward(result.getReward()).nextObservation(result.getObservation()).build()));
+  //      network.save(filename);
         return result;
     }
 

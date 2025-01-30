@@ -1,14 +1,10 @@
 package de.neebs.ai.control.games;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.neebs.ai.control.rl.*;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 class ConnectFourTest {
     @Test
@@ -41,7 +37,7 @@ class ConnectFourTest {
         ConnectFour.Env environment = new ConnectFour.Env(ConnectFour.GameAction.class, ConnectFour.GameState.class);
         String filename = "connect-four-agent-ql.json";
 //        NeuralNetwork1D<ConnectFour.GameState> network = new NeuralNetwork1D<>("connect-four-agent.zip");
-        SimpleQNetwork<ConnectFour.GameState, ConnectFour.GameAction> network = loadSimpleQNetwork(filename);
+        SingleFileQNetwork<ConnectFour.GameState, ConnectFour.GameAction> network = new SingleFileQNetwork<>(filename, ConnectFour.GameState.class, 0.001, ConnectFour.GameAction.class);
         Agent<ConnectFour.GameAction, ConnectFour.GameState> red = new QLearningAgent<>(network, EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.010).step(1).build(), 1.0);
         Agent<ConnectFour.GameAction, ConnectFour.GameState> yellow = new DoTheFollowingAgent<>(
                 new ConnectFour.ActionObservationFilter(),
@@ -54,16 +50,9 @@ class ConnectFourTest {
         network.save(filename);
     }
 
-    private static SimpleQNetwork<ConnectFour.GameState, ConnectFour.GameAction> loadSimpleQNetwork(String filename) {
-        SimpleQNetwork<ConnectFour.GameState, ConnectFour.GameAction> network;
-        File file = new File(filename);
-        try {
-            List<SimpleQNetwork.SaveData<ConnectFour.GameState>> saveData = new ObjectMapper().readValue(file, new TypeReference<>() {});
-            network = new SimpleQNetwork<>(saveData.stream().collect(Collectors.toMap(SimpleQNetwork.SaveData::getObservation, SimpleQNetwork.SaveData::getWeights)), 0.001, ConnectFour.GameAction.class);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-        return network;
+    @Test
+    void test4() {
+        FileQNetworkTransfer<ConnectFour.GameAction, ConnectFour.GameState> transfer = new FileQNetworkTransfer<>();
+        transfer.splitFile("connect-four-agent-ql.json", ConnectFour.GameState.class, ConnectFour.GameAction.class);
     }
-
 }

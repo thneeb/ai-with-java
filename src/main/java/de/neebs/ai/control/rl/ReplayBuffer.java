@@ -3,6 +3,7 @@ package de.neebs.ai.control.rl;
 import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -20,10 +21,16 @@ public class ReplayBuffer<A extends Action, O extends Observation> {
     }
 
     public List<Transition<A, O>> sample(int batchSize) {
+        double rewardPercentage = 0;
         List<Transition<A, O>> sample = new ArrayList<>();
-        for (int i = 0; i < Math.min(batchSize, list.size()); i++) {
+        List<Transition<A, O>> listWithRewards = list.stream().filter(f -> f.getReward() != 0).toList();
+        for (int i = 0; i < Math.min(batchSize * rewardPercentage, listWithRewards.size()); i++) {
+            sample.add(listWithRewards.get(RANDOM.nextInt(listWithRewards.size())));
+        }
+        for (int i = 0; i < Math.min(batchSize * (1 - rewardPercentage), list.size()); i++) {
             sample.add(list.get(RANDOM.nextInt(list.size())));
         }
+        Collections.shuffle(sample);
         return sample;
     }
 

@@ -162,30 +162,30 @@ public class Pong {
                             .nIn(1)
                             .nOut(32)
                             .weightInit(WeightInit.XAVIER)
-                            .activation(Activation.RELU)
+                            .activation(Activation.LEAKYRELU)
                             .build())
                     .layer(new ConvolutionLayer.Builder(4, 4)
                             .stride(2, 2)
                             .nIn(1)
                             .nOut(64)
                             .weightInit(WeightInit.XAVIER)
-                            .activation(Activation.RELU)
+                            .activation(Activation.LEAKYRELU)
                             .build())
                     .layer(new ConvolutionLayer.Builder(3, 3)
                             .stride(1, 1)
                             .nIn(1)
                             .nOut(64)
                             .weightInit(WeightInit.XAVIER)
-                            .activation(Activation.RELU)
+                            .activation(Activation.LEAKYRELU)
                             .build())
                     .layer(3, new DenseLayer.Builder()
                             .nOut(512)
                             .weightInit(WeightInit.XAVIER)
-                            .activation(Activation.RELU)
+                            .activation(Activation.LEAKYRELU)
                             .build())
-                    .layer(4, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .layer(4, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                             .nOut(GameAction.values().length) // Ausgabe (z.B. 10 Klassen)
-                            .activation(Activation.SOFTMAX) // Softmax für Klassifikation
+                            .activation(Activation.IDENTITY) // Softmax für Klassifikation
                             .build())
                     .setInputType(org.deeplearning4j.nn.conf.inputs.InputType.convolutionalFlat(84, 84, 1)) // Input-Shape definieren
                     .build());
@@ -201,7 +201,7 @@ public class Pong {
                 new GymEnvironment<>(GameAction.class, GameState3D.class, gymClient).init("ale_py:ALE/Pong-v5");
         Environment<GameAction, GameStateImage> envImage = new ReduceImageSize(env3d);
 
-        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.42).epsilonMin(0.1).decreaseRate(0.01).build();
+        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(1).epsilonMin(0.1).decreaseRate(0.01).build();
 
         NeuralNetworkImage<GameStateImage> network;
         if (startFresh) {
