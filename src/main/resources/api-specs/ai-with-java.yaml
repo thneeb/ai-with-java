@@ -130,6 +130,10 @@ components:
         saveInterval:
           type: integer
           default: 1000
+        epsilon:
+          type: number
+          format: double
+          default: 1.0
         episodes:
           type: integer
           default: 1000

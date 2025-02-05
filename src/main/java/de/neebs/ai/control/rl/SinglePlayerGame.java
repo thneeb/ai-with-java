@@ -10,14 +10,19 @@ import java.util.*;
 public class SinglePlayerGame<A extends Action, O extends Observation, E extends Environment<A, O>> {
     private final E environment;
     private final Agent<A, O> agent;
-    private final ReplayBuffer<A, O> replayBuffer = new ReplayBuffer<>(1000);
+    private final ReplayBuffer<A, O> replayBuffer;
+    private final int batchSize;
+    private final double rewardPercentage;
 
-    public SinglePlayerGame(E environment, Agent<A, O> agent) {
+    public SinglePlayerGame(E environment, Agent<A, O> agent, int bufferSize, int batchSize, double rewardPercentage) {
         this.environment = environment;
         this.agent = agent;
+        this.replayBuffer = new ReplayBuffer<>(bufferSize);
+        this.batchSize = batchSize;
+        this.rewardPercentage = rewardPercentage;
     }
 
-    public PlayResult<O> play() {
+    public PlayResult<A, O> play() {
         List<HistoryEntry<A, O>> history = new ArrayList<>();
         O observation = getEnvironment().reset();
         double reward = 0.0;
@@ -35,17 +40,18 @@ public class SinglePlayerGame<A extends Action, O extends Observation, E extends
                     .nextObservation(done ? null : stepResult.getObservation())
                     .build());
 
-            if (agent instanceof LearningAgent<A, O> learningAgent) {
-                List<Transition<A, O>> transitions = replayBuffer.sample(100);
+            if (agent instanceof LearningAgent<A, O> learningAgent && replayBuffer.size() >= batchSize) {
+                List<Transition<A, O>> transitions = replayBuffer.sample(batchSize, rewardPercentage);
                 learningAgent.learn(transitions);
             }
 
             observation = stepResult.getObservation();
         }
 
-        return PlayResult.<O>builder()
+        return PlayResult.<A, O>builder()
                 .reward(reward)
                 .rounds(history.size())
+                .history(history)
                 .observation(observation)
                 .build();
     }

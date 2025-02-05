@@ -1,6 +1,7 @@
 package de.neebs.ai.control.games;
 
 import de.neebs.ai.control.rl.*;
+import de.neebs.ai.control.rl.dl4j.NeuralNetwork1D;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -29,14 +30,14 @@ class ConnectFourTest {
             System.out.println("Episode " + i + ", QLearning: " + multiPlayerResult.getRewards().get(red) + ", DoNotWin: " + multiPlayerResult.getRewards().get(yellow) + ", Rounds: " + multiPlayerResult.getRounds() + ", Epsilon: " + greedy.getEpsilon());
             greedy.decrease();
         }
-        network.save("connect-four-agent.zip");
+        network.save("connect-four-agent");
     }
 
     @Test
     void test3() {
         ConnectFour.Env environment = new ConnectFour.Env(ConnectFour.GameAction.class, ConnectFour.GameState.class);
         String filename = "connect-four-agent-ql.json";
-//        NeuralNetwork1D<ConnectFour.GameState> network = new NeuralNetwork1D<>("connect-four-agent.zip");
+//        NeuralNetwork1D<ConnectFour.GameState> network = new NeuralNetwork1D<>("connect-four-agent-dl4j.zip");
         SingleFileQNetwork<ConnectFour.GameState, ConnectFour.GameAction> network = new SingleFileQNetwork<>(filename, ConnectFour.GameState.class, 0.001, ConnectFour.GameAction.class);
         Agent<ConnectFour.GameAction, ConnectFour.GameState> red = new QLearningAgent<>(network, EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.010).step(1).build(), 1.0);
         Agent<ConnectFour.GameAction, ConnectFour.GameState> yellow = new DoTheFollowingAgent<>(

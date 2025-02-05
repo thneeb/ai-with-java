@@ -20,14 +20,14 @@ public class ReplayBuffer<A extends Action, O extends Observation> {
         list.add(transition);
     }
 
-    public List<Transition<A, O>> sample(int batchSize) {
-        double rewardPercentage = 0;
+    public List<Transition<A, O>> sample(int batchSize, double rewardPercentage) {
         List<Transition<A, O>> sample = new ArrayList<>();
         List<Transition<A, O>> listWithRewards = list.stream().filter(f -> f.getReward() != 0).toList();
         for (int i = 0; i < Math.min(batchSize * rewardPercentage, listWithRewards.size()); i++) {
             sample.add(listWithRewards.get(RANDOM.nextInt(listWithRewards.size())));
         }
-        for (int i = 0; i < Math.min(batchSize * (1 - rewardPercentage), list.size()); i++) {
+        int remaining = batchSize - sample.size();
+        for (int i = 0; i < remaining; i++) {
             sample.add(list.get(RANDOM.nextInt(list.size())));
         }
         Collections.shuffle(sample);
@@ -40,4 +40,7 @@ public class ReplayBuffer<A extends Action, O extends Observation> {
         return list.subList(list.size() - size, list.size());
     }
 
+    public int size() {
+        return list.size();
+    }
 }

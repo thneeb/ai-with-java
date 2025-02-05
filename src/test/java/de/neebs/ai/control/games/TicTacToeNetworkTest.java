@@ -1,6 +1,7 @@
 package de.neebs.ai.control.games;
 
 import de.neebs.ai.control.rl.*;
+import de.neebs.ai.control.rl.dl4j.NeuralNetwork1D;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

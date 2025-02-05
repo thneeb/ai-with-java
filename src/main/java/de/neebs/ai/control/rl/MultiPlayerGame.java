@@ -64,7 +64,7 @@ public class MultiPlayerGame<A extends Action, O extends MultiPlayerState & Obse
 
         for (Agent<A, O> a : agents) {
             if (a instanceof LearningAgent<A, O> learningAgent) {
-                List<Transition<A, O>> transitions = replayBuffer.sample(history.size());
+                List<Transition<A, O>> transitions = replayBuffer.sample(history.size(), 0);
                 learningAgent.learn(transitions);
             }
         }

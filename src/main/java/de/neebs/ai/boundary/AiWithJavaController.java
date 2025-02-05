@@ -91,7 +91,7 @@ public class AiWithJavaController implements DefaultApi {
 
     @Override
     public ResponseEntity<Void> pong(Config config) {
-        pong.execute(config.getStartFresh());
+        pong.execute(config.getStartFresh(), config.getSaveModel(), config.getEpsilon(), config.getEpisodes());
         return ResponseEntity.ok().build();
     }
 

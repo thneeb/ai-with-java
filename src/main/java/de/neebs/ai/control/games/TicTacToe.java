@@ -1,6 +1,8 @@
 package de.neebs.ai.control.games;
 
 import de.neebs.ai.control.rl.*;
+import de.neebs.ai.control.rl.dl4j.NeuralNetwork1D;
+import de.neebs.ai.control.rl.dl4j.NeuralNetworkFactory;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;

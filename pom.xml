@@ -21,6 +21,18 @@
     <dl4j-master.version>1.0.0-M2.1</dl4j-master.version>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>ai.djl</groupId>
+        <artifactId>bom</artifactId>
+        <version>0.31.0</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -58,12 +70,12 @@
       <artifactId>deeplearning4j-core</artifactId>
       <version>${dl4j-master.version}</version>
     </dependency>
-    <!--dependency>
+    <dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-native</artifactId>
       <version>${dl4j-master.version}</version>
-    </dependency-->
-    <dependency>
+    </dependency>
+    <!--dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-cuda-11.6</artifactId>
       <version>${dl4j-master.version}</version>
@@ -72,6 +84,42 @@
       <groupId>org.bytedeco</groupId>
       <artifactId>cuda-platform-redist</artifactId>
       <version>11.6-8.3-1.5.7</version>
+    </dependency-->
+    <!-- DJL API -->
+
+
+    <dependency>
+      <groupId>ai.djl</groupId>
+      <artifactId>api</artifactId>
+    </dependency>
+
+    <!-- PyTorch als Backend -->
+    <dependency>
+      <groupId>ai.djl.pytorch</groupId>
+      <artifactId>pytorch-engine</artifactId>
+    </dependency>
+
+    <!-- PyTorch Native für CPU (wenn du keine GPU nutzt) -->
+    <dependency>
+      <groupId>ai.djl.pytorch</groupId>
+      <artifactId>pytorch-jni</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Falls du GPU-Unterstützung möchtest (statt der CPU-Variante) -->
+    <!--
+    <dependency>
+        <groupId>ai.djl.pytorch</groupId>
+        <artifactId>pytorch-native-cu121</artifactId>
+        <version>2.2.0</version>
+        <scope>runtime</scope>
+    </dependency>
+    -->
+
+    <!-- Falls du Bildverarbeitung brauchst -->
+    <dependency>
+      <groupId>ai.djl.pytorch</groupId>
+      <artifactId>pytorch-model-zoo</artifactId>
     </dependency>
   </dependencies>
 

@@ -8,19 +8,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.deeplearning4j.nn.weights.WeightInit;
-import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -31,6 +23,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class Pong {
+    private static final int WIDTH = 84;
+    private static final int HEIGHT = 84;
+    private static final int CHANNELS = 1;
+
     private final GymClient gymClient;
 
     enum GameAction implements Action {
@@ -110,7 +106,7 @@ public class Pong {
         }
 
         private static BufferedImage createImage(GameState3D state) {
-            BufferedImage image = new BufferedImage(state.getWidth(), state.getHeight(), BufferedImage.TYPE_INT_RGB );
+            BufferedImage image = new BufferedImage(state.getHeight(), state.getWidth(), BufferedImage.TYPE_INT_RGB );
             for (int col = 0; col < state.getWidth(); col++) {
                 for (int row = 0; row < state.getHeight(); row++) {
                     int rgb;
@@ -120,7 +116,7 @@ public class Pong {
                         rgb = (int)(state.observation[col][row][0]);
                         rgb = (rgb << 16) | (rgb << 8) | rgb;
                     }
-                    image.setRGB(col, row, rgb);
+                    image.setRGB(row, col, rgb);
                 }
             }
             return image;
@@ -128,9 +124,6 @@ public class Pong {
     }
 
     static class ReduceImageSize extends ObservationWrapper<GameAction, GameState3D, GameStateImage> {
-        private static final int WIDTH = 84;
-        private static final int HEIGHT = 84;
-
         ReduceImageSize(Environment<GameAction, GameState3D> env) {
             super(env);
         }
@@ -149,78 +142,62 @@ public class Pong {
         }
     }
 
-    static class MyNeuralNetworkFactory implements NeuralNetworkFactory {
+    static class ScaleReward extends RewardFitter<GameAction, GameStateImage> {
+        ScaleReward(Environment<GameAction, GameStateImage> environment) {
+            super(environment);
+        }
+
         @Override
-        public MultiLayerNetwork createNeuralNetwork(long seed) {
-            MultiLayerNetwork model = new MultiLayerNetwork(new NeuralNetConfiguration.Builder()
-                    .seed(123)
-                    .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                    .updater(new Adam(0.0001))
-                    .list()
-                    .layer(new ConvolutionLayer.Builder(8, 8)
-                            .stride(4, 4)
-                            .nIn(1)
-                            .nOut(32)
-                            .weightInit(WeightInit.XAVIER)
-                            .activation(Activation.LEAKYRELU)
-                            .build())
-                    .layer(new ConvolutionLayer.Builder(4, 4)
-                            .stride(2, 2)
-                            .nIn(1)
-                            .nOut(64)
-                            .weightInit(WeightInit.XAVIER)
-                            .activation(Activation.LEAKYRELU)
-                            .build())
-                    .layer(new ConvolutionLayer.Builder(3, 3)
-                            .stride(1, 1)
-                            .nIn(1)
-                            .nOut(64)
-                            .weightInit(WeightInit.XAVIER)
-                            .activation(Activation.LEAKYRELU)
-                            .build())
-                    .layer(3, new DenseLayer.Builder()
-                            .nOut(512)
-                            .weightInit(WeightInit.XAVIER)
-                            .activation(Activation.LEAKYRELU)
-                            .build())
-                    .layer(4, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                            .nOut(GameAction.values().length) // Ausgabe (z.B. 10 Klassen)
-                            .activation(Activation.IDENTITY) // Softmax für Klassifikation
-                            .build())
-                    .setInputType(org.deeplearning4j.nn.conf.inputs.InputType.convolutionalFlat(84, 84, 1)) // Input-Shape definieren
-                    .build());
-            model.init();
-            log.info(model.summary());
-            return model;
+        protected double fitReward(double reward) {
+            return reward * 10;
         }
     }
 
-    public void execute(boolean startFresh) {
-        String filename = "pong-agent.zip";
+    public void execute(boolean startFresh, boolean saveModel, Double epsilon, Integer episodes) {
+        String filename = "pong-agent";
         Environment<GameAction, GameState3D> env3d =
                 new GymEnvironment<>(GameAction.class, GameState3D.class, gymClient).init("ale_py:ALE/Pong-v5");
         Environment<GameAction, GameStateImage> envImage = new ReduceImageSize(env3d);
+        envImage = new ScaleReward(envImage);
 
-        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(1).epsilonMin(0.1).decreaseRate(0.01).build();
+        EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder()
+                .epsilon(epsilon == null ? 1.0 : epsilon)
+                .epsilonMin(0.1)
+                .decreaseRate(0.01)
+                .build();
 
-        NeuralNetworkImage<GameStateImage> network;
-        if (startFresh) {
-            network = new NeuralNetworkImage<>(new MyNeuralNetworkFactory(), 123);
-        } else {
-            network = new NeuralNetworkImage<>(filename);
-        }
+        QNetwork<GameStateImage> network = new PongDL4J(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
+//        QNetwork<GameStateImage> network = new PongDJL(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
 
         Agent<GameAction, GameStateImage> agent = new QLearningAgent<>(
                 network,
                 greedy,
                 0.99);
 
-        SinglePlayerGame<GameAction, GameStateImage, Environment<GameAction, GameStateImage>> game = new SinglePlayerGame<>(envImage, agent);
-        for (int i = 0; i < 500; i++) {
-            PlayResult<GameStateImage> result = game.play();
+        SinglePlayerGame<GameAction, GameStateImage, Environment<GameAction, GameStateImage>> game = new SinglePlayerGame<>(envImage, agent, 10000, 64, 0.02);
+        for (int i = 0; i < (episodes == null ? 500 : episodes); i++) {
+            PlayResult<GameAction, GameStateImage> result = game.play();
+            saveAnimatedGif(result.getHistory().stream()
+                    .map(HistoryEntry::getObservation)
+                    .map(GameStateImage::getObservation)
+                    .toList(), i);
             greedy.decrease(i);
-            network.save(filename);
-            log.info("Runde: {}, Reward: {}, Epsilon: {}, Frames: {}", i, result.getReward(), greedy.getEpsilon(), result.getRounds());
+            if (saveModel) {
+                network.save(filename);
+            }
+            log.info("Round: {}, Reward: {}, Epsilon: {}, Frames: {}", i, result.getReward(), greedy.getEpsilon(), result.getRounds());
+        }
+    }
+
+    private void saveAnimatedGif(List<BufferedImage> result, int episode) {
+        try (ImageOutputStream output = new FileImageOutputStream(new File("movie" + episode + ".gif"))) {
+            GifSequenceWriter gifSequenceWriter = new GifSequenceWriter(output, result.get(0).getType(),1 , false);
+            for (BufferedImage buffered : result) {
+                gifSequenceWriter.writeToSequence(buffered);
+            }
+            gifSequenceWriter.close();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 }

@@ -46,6 +46,6 @@ public class DoubleQLearningAgent<A extends Action, O extends Observation1D> ext
         }
         double target = transition.getReward() + q * getGamma();
         qPrevious[transition.getAction().ordinal()] = target;
-        return new TrainingData<>(transition.getObservation(), qPrevious);
+        return new TrainingData<>(transition.getObservation(), qPrevious, transition.getAction().ordinal());
     }
 }

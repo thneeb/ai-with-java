@@ -2,6 +2,8 @@ package de.neebs.ai.control.games;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.neebs.ai.control.rl.*;
+import de.neebs.ai.control.rl.dl4j.NeuralNetwork1D;
+import de.neebs.ai.control.rl.dl4j.NeuralNetworkFactory;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.conf.GradientNormalization;
@@ -389,7 +391,7 @@ public class ConnectFour {
     }
 
     public void execute(boolean startFresh, boolean saveModel, Integer saveInterval, Integer episodes) {
-        String filename = "connect-four-agent-1d.zip";
+        String filename = "connect-four-agent-1d-dl4j.zip";
         Env environment = new Env(GameAction.class, GameState.class);
         NeuralNetwork1D<GameState> network;
         if (startFresh) {
@@ -485,7 +487,7 @@ public class ConnectFour {
 
     private StepResult<GameState> computerMove(GameState gameState) {
 //        String filename = "connect-four-agent-ql.json";
-        String filename = "connect-four-agent-1d.zip";
+        String filename = "connect-four-agent-1d-dl4j.zip";
         Env environment = new Env(GameAction.class, GameState.class);
         environment.setObservation(gameState);
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();

@@ -10,4 +10,5 @@ import lombok.Getter;
 public class TrainingData<O extends Observation> {
     private O input;
     private double[] output;
+    private int index;
 }
