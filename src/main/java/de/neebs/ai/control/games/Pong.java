@@ -149,11 +149,11 @@ public class Pong {
 
         @Override
         protected double fitReward(double reward) {
-            return reward * 10;
+            return reward;
         }
     }
 
-    public void execute(boolean startFresh, boolean saveModel, Double epsilon, Integer episodes) {
+    public void execute(boolean startFresh, boolean saveModel, Double epsilon, Integer startingEpisode, Integer episodes) {
         String filename = "pong-agent";
         Environment<GameAction, GameState3D> env3d =
                 new GymEnvironment<>(GameAction.class, GameState3D.class, gymClient).init("ale_py:ALE/Pong-v5");
@@ -166,16 +166,17 @@ public class Pong {
                 .decreaseRate(0.01)
                 .build();
 
-        QNetwork<GameStateImage> network = new PongDL4J(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
-//        QNetwork<GameStateImage> network = new PongDJL(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
+//        QNetwork<GameStateImage> network = new PongDL4J(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
+        QNetwork<GameStateImage> network = new PongDJL(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
 
-        Agent<GameAction, GameStateImage> agent = new QLearningAgent<>(
+        Agent<GameAction, GameStateImage> agent = new DoubleQLearningAgent<>(
                 network,
                 greedy,
-                0.99);
+                0.99,
+                1000);
 
         SinglePlayerGame<GameAction, GameStateImage, Environment<GameAction, GameStateImage>> game = new SinglePlayerGame<>(envImage, agent, 10000, 64, 0.02);
-        for (int i = 0; i < (episodes == null ? 500 : episodes); i++) {
+        for (int i = (startingEpisode == null ? 0 : startingEpisode); i < (episodes == null ? 500 : episodes); i++) {
             PlayResult<GameAction, GameStateImage> result = game.play();
             saveAnimatedGif(result.getHistory().stream()
                     .map(HistoryEntry::getObservation)
@@ -185,7 +186,7 @@ public class Pong {
             if (saveModel) {
                 network.save(filename);
             }
-            log.info("Round: {}, Reward: {}, Epsilon: {}, Frames: {}", i, result.getReward(), greedy.getEpsilon(), result.getRounds());
+            log.info("Round: {}, Reward: {}, Epsilon: {}, Frames: {}", i, result.getReward(), String.format("%.2f", greedy.getEpsilon()), result.getRounds());
         }
     }
 

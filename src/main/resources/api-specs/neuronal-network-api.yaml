@@ -1,0 +1,139 @@
+openapi: 3.0.2
+info:
+  title: ai-with-java
+  version: 1.0.0
+  contact:
+    name: Thomas Neeb
+    email: thomas.neeb@nttdata.com
+paths:
+  /models:
+    post:
+      operationId: createModel
+      responses:
+        '201':
+          description: Returns the id of the created model
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modelId:
+                    type: string
+  /instances:
+    post:
+      operationId: createInstance
+      responses:
+        '201':
+          description: Returns the id of the created instance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instanceId:
+                    type: string
+  /instances/{instanceId}/predictions:
+    parameters:
+      - name: instanceId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: predict
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Observation3D'
+      responses:
+        '200':
+          description: Returns the prediction for the given input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelOutput'
+  /instance/{instanceId}/trainings:
+    parameters:
+      - name: instanceId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: train
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/TrainingData3D'
+      responses:
+        '204':
+          description: Trained data successfully
+components:
+  schemas:
+    Observation1D:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: number
+            format: double
+    Observation2D:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+    Observation3D:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: number
+                format: double
+    TrainingData1D:
+      type: object
+      properties:
+        feature:
+          $ref: '#/components/schemas/Observation1D'
+        label:
+          $ref: '#/components/schemas/ModelOutput'
+        action:
+          type: integer
+    TrainingData2D:
+      type: object
+      properties:
+        feature:
+          $ref: '#/components/schemas/Observation2D'
+        label:
+          $ref: '#/components/schemas/ModelOutput'
+        action:
+          type: integer
+    TrainingData3D:
+      type: object
+      properties:
+        feature:
+          $ref: '#/components/schemas/Observation3D'
+        label:
+          $ref: '#/components/schemas/ModelOutput'
+        action:
+          type: integer
+    ModelOutput:
+      type: object
+      properties:
+        prediction:
+          type: number
+          format: double

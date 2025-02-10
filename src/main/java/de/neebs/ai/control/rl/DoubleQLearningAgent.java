@@ -1,14 +1,9 @@
 package de.neebs.ai.control.rl;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 
-@Getter(AccessLevel.PACKAGE)
-public class DoubleQLearningAgent<A extends Action, O extends Observation1D> extends QLearningAgent<A, O> {
+public class DoubleQLearningAgent<A extends Action, O extends Observation> extends QLearningAgent<A, O> {
     private final QNetwork<O> targetNetwork;
     private final int updateFrequency;
     private int updateCounter = 0;
@@ -25,7 +20,7 @@ public class DoubleQLearningAgent<A extends Action, O extends Observation1D> ext
                 .map(this::transition2TrainingData)
                 .toList();
         getNeuralNetwork().train(trainingData);
-        updateCounter += trainingData.size();
+        updateCounter++;
         if (updateCounter >= updateFrequency) {
             updateCounter -= updateFrequency;
             targetNetwork.copyParams(getNeuralNetwork());
@@ -38,11 +33,8 @@ public class DoubleQLearningAgent<A extends Action, O extends Observation1D> ext
         if (transition.getNextObservation() == null) {
             q = 0.0;
         } else {
-            double[] qNext = getNeuralNetwork().predict(transition.getNextObservation());
-            double qTemp = Arrays.stream(qNext).max().orElse(0.0);
-            int index = IntStream.range(0, qNext.length).filter(i -> qNext[i] == qTemp).findFirst().orElseThrow();
-            double[] qTarget = getTargetNetwork().predict(transition.getNextObservation());
-            q = qTarget[index];
+            double[] qNext = targetNetwork.predict(transition.getNextObservation());
+            q = Arrays.stream(qNext).max().orElse(0.0);
         }
         double target = transition.getReward() + q * getGamma();
         qPrevious[transition.getAction().ordinal()] = target;

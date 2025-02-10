@@ -32,24 +32,6 @@ public class AiWithJavaController implements DefaultApi {
     private final GymClient gymClient;
 
     @Override
-    public ResponseEntity<Void> startNetwork() {
-        networkMain.execute();
-        return ResponseEntity.ok().build();
-    }
-
-    @Override
-    public ResponseEntity<Void> startPerceptron() {
-        perceptronMain.execute();
-        return ResponseEntity.ok().build();
-    }
-
-    @Override
-    public ResponseEntity<Void> startDL4J() {
-        firstExample.execute();
-        return ResponseEntity.ok().build();
-    }
-
-    @Override
     public ResponseEntity<Void> ticTacToe() {
         ticTacToe.execute();
         return ResponseEntity.ok().build();
@@ -91,7 +73,7 @@ public class AiWithJavaController implements DefaultApi {
 
     @Override
     public ResponseEntity<Void> pong(Config config) {
-        pong.execute(config.getStartFresh(), config.getSaveModel(), config.getEpsilon(), config.getEpisodes());
+        pong.execute(config.getStartFresh(), config.getSaveModel(), config.getEpsilon(), config.getStartingEpisode(), config.getEpisodes());
         return ResponseEntity.ok().build();
     }
 

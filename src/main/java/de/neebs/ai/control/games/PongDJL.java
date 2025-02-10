@@ -13,6 +13,7 @@ import ai.djl.nn.core.Linear;
 import ai.djl.training.DefaultTrainingConfig;
 import ai.djl.training.Trainer;
 import ai.djl.training.initializer.XavierInitializer;
+import ai.djl.training.listener.EpochTrainingListener;
 import ai.djl.training.loss.Loss;
 import ai.djl.training.optimizer.Optimizer;
 import de.neebs.ai.control.rl.QNetwork;
@@ -70,7 +71,7 @@ public class PongDJL implements NeuralNetworkFactory {
     @Override
     public Trainer createTrainer(Model model) {
         DefaultTrainingConfig config = new DefaultTrainingConfig(Loss.l2Loss())
-                .optOptimizer(Optimizer.adam().build());
+                .optOptimizer(Optimizer.adam().build()).addTrainingListeners(new EpochTrainingListener());
         return model.newTrainer(config);
     }
 

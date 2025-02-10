@@ -6,24 +6,6 @@ info:
     name: Thomas Neeb
     email: thomas.neeb@nttdata.com
 paths:
-  /perceptron:
-    post:
-      operationId: startPerceptron
-      responses:
-        '204':
-          description: Returns the actual game field for the given id
-  /network:
-    post:
-      operationId: startNetwork
-      responses:
-        '204':
-          description: Returns the actual game field for the given id
-  /dl4j:
-    post:
-      operationId: startDL4J
-      responses:
-        '204':
-          description: Returns the actual game field for the given id
   /tictactoe:
     post:
       operationId: ticTacToe
@@ -134,6 +116,9 @@ components:
           type: number
           format: double
           default: 1.0
+        startingEpisode:
+          type: integer
+          default: 0
         episodes:
           type: integer
           default: 1000

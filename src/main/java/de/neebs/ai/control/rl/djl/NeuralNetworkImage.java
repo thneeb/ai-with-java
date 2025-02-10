@@ -15,6 +15,7 @@ import ai.djl.translate.TranslateException;
 import ai.djl.translate.Translator;
 import ai.djl.translate.TranslatorContext;
 import de.neebs.ai.control.rl.ObservationImage;
+import de.neebs.ai.control.rl.QNetwork;
 import de.neebs.ai.control.rl.TrainingData;
 
 import java.awt.image.BufferedImage;
@@ -38,7 +39,7 @@ public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDjlN
             @Override
             public double[] processOutput(TranslatorContext ctx, NDList list) {
                 float[] floats = list.singletonOrThrow().toFloatArray();
-                return IntStream.range(0, floats.length).mapToDouble(f -> (double)f).toArray();
+                return IntStream.range(0, floats.length).mapToDouble(f -> (double)floats[f]).toArray();
             }
 
             @Override
@@ -97,5 +98,12 @@ public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDjlN
         } catch (IOException | TranslateException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    @Override
+    public QNetwork<O> copy() {
+        NeuralNetworkImage<O> copy = new NeuralNetworkImage<>(getFactory(), getSeed());
+        copy.copyParams(this);
+        return copy;
     }
 }

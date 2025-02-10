@@ -35,16 +35,31 @@ public class QLearningAgent<A extends Action, O extends Observation> implements 
     }
 
     private TrainingData<O> transition2TrainingData(Transition<A, O> transition) {
-        double[] qPrevious = getNeuralNetwork().predict(transition.getObservation());
+        double[] qValues = getNeuralNetwork().predict(transition.getObservation());
+
+        makeQValuesPositive(qValues);
+
         double q;
         if (transition.getNextObservation() == null) {
             q = 0.0;
         } else {
             double[] qNext = getNeuralNetwork().predict(transition.getNextObservation());
+            makeQValuesPositive(qNext);
             q = Arrays.stream(qNext).max().orElse(0.0);
         }
-        double target = transition.getReward() + Math.max(q, 0) * getGamma();
-        qPrevious[transition.getAction().ordinal()] = target;
-        return new TrainingData<>(transition.getObservation(), qPrevious, transition.getAction().ordinal());
+        double target = transition.getReward() + q * getGamma();
+        qValues[transition.getAction().ordinal()] = target;
+        return new TrainingData<>(transition.getObservation(), qValues, transition.getAction().ordinal());
+    }
+
+    void makeQValuesPositive(double[] qValues) {
+        double maxQ = Arrays.stream(qValues).max().orElse(0);
+
+        if (maxQ < 0) {
+            double minQ = Arrays.stream(qValues).min().orElse(0);
+            for (int i = 0; i < qValues.length; i++) {
+                qValues[i] += Math.abs(minQ) + 0.01;  // Kleinen Offset basierend auf negativstem Wert
+            }
+        }
     }
 }
