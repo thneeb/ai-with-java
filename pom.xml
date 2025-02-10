@@ -144,7 +144,7 @@
         <version>7.10.0</version>
         <executions>
           <execution>
-            <id>franchise</id>
+            <id>ai-with-java</id>
             <goals>
               <goal>generate</goal>
             </goals>
@@ -169,6 +169,35 @@
                 <apiPackage>de.neebs.aiwithjava.client.boundary</apiPackage>
                 <modelPackage>de.neebs.aiwithjava.client.entity</modelPackage>
                 <invokerPackage>de.neebs.aiwithjava.client.integration</invokerPackage>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>neuronal-network-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/api-specs/neuronal-network-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <library>spring-boot</library>
+              <configOptions>
+                <sourceFolder>src/gen/java/main</sourceFolder>
+                <generateSupportingFiles>true</generateSupportingFiles>
+                <interfaceOnly>true</interfaceOnly>
+                <useResponseEntity>true</useResponseEntity>
+                <skipDefaultInterface>true</skipDefaultInterface>
+                <useTags>true</useTags>
+                <useSpringBoot3>true</useSpringBoot3>
+                <generatedConstructorWithRequiredArgs>false</generatedConstructorWithRequiredArgs>
+                <dateLibrary>legacy</dateLibrary>
+                <openApiNullable>false</openApiNullable>
+                <prependFormOrBodyParameters>true</prependFormOrBodyParameters>
+                <generateBuilders>true</generateBuilders>
+                <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
+                <apiPackage>de.neebs.aiwithjava.nn.client.boundary</apiPackage>
+                <modelPackage>de.neebs.aiwithjava.nn.client.entity</modelPackage>
+                <invokerPackage>de.neebs.aiwithjava.nn.client.integration</invokerPackage>
               </configOptions>
             </configuration>
           </execution>
