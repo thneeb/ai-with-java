@@ -4,6 +4,7 @@ import de.neebs.ai.control.rl.*;
 import de.neebs.ai.control.rl.gym.GymClient;
 import de.neebs.ai.control.rl.gym.GymEnvironment;
 import de.neebs.ai.control.rl.ObservationWrapper;
+import de.neebs.ai.control.rl.remote.RemoteNetworkFacade;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -17,6 +18,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -26,8 +28,10 @@ public class Pong {
     private static final int WIDTH = 84;
     private static final int HEIGHT = 84;
     private static final int CHANNELS = 1;
+    private static final int STACK_SIZE = 4;
 
     private final GymClient gymClient;
+    private final RemoteNetworkFacade remoteNetworkFacade;
 
     enum GameAction implements Action {
         NOOP,
@@ -64,6 +68,12 @@ public class Pong {
     @RequiredArgsConstructor
     static class GameStateImage implements ObservationImage {
         private final BufferedImage observation;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    static class GameStateImageSequence implements ObservationImageSequence {
+        private final List<BufferedImage> observation;
     }
 
     static class Utils {
@@ -142,14 +152,32 @@ public class Pong {
         }
     }
 
-    static class ScaleReward extends RewardFitter<GameAction, GameStateImage> {
-        ScaleReward(Environment<GameAction, GameStateImage> environment) {
-            super(environment);
+    static class StackedImageEnvironment extends ObservationWrapper<GameAction, GameStateImage, GameStateImageSequence> {
+        private final int stackSize;
+        private final List<BufferedImage> stack;
+
+        StackedImageEnvironment(Environment<GameAction, GameStateImage> env, int stackSize) {
+            super(env);
+            this.stackSize = stackSize;
+            this.stack = new ArrayList<>(stackSize);
         }
 
         @Override
-        protected double fitReward(double reward) {
-            return reward;
+        protected GameStateImageSequence wrapper(GameStateImage observation) {
+            if (stack.isEmpty()) {
+                for (int i = 0; i < stackSize; i++) {
+                    stack.add(observation.getObservation());
+                }
+            } else {
+                stack.remove(0);
+                stack.add(observation.getObservation());
+            }
+            return new GameStateImageSequence(new ArrayList<>(stack));
+        }
+
+        @Override
+        public List<Integer> getObservationSpace() {
+            return List.of(WIDTH, HEIGHT, stackSize);
         }
     }
 
@@ -158,7 +186,7 @@ public class Pong {
         Environment<GameAction, GameState3D> env3d =
                 new GymEnvironment<>(GameAction.class, GameState3D.class, gymClient).init("ale_py:ALE/Pong-v5");
         Environment<GameAction, GameStateImage> envImage = new ReduceImageSize(env3d);
-        envImage = new ScaleReward(envImage);
+        Environment<GameAction, GameStateImageSequence> envImageSequence = new StackedImageEnvironment(envImage, STACK_SIZE);
 
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder()
                 .epsilon(epsilon == null ? 1.0 : epsilon)
@@ -166,21 +194,23 @@ public class Pong {
                 .decreaseRate(0.01)
                 .build();
 
-//        QNetwork<GameStateImage> network = new PongDL4J(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
-        QNetwork<GameStateImage> network = new PongDJL(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
+//        QNetwork<GameStateImageSequence> network = new PongDL4J(WIDTH, HEIGHT, CHANNELS * STACK_SIZE, envImageSequence.getActionSpace().getActions().size()).createQNetwork2(startFresh ? null : filename);
+//        QNetwork<GameStateImage> network = new PongDJL(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
+        QNetwork<GameStateImageSequence> network = new PongRemote(remoteNetworkFacade).createQNetwork(null);
 
-        Agent<GameAction, GameStateImage> agent = new DoubleQLearningAgent<>(
+        Agent<GameAction, GameStateImageSequence> agent = new DoubleQLearningAgent<>(
                 network,
                 greedy,
                 0.99,
                 1000);
 
-        SinglePlayerGame<GameAction, GameStateImage, Environment<GameAction, GameStateImage>> game = new SinglePlayerGame<>(envImage, agent, 10000, 64, 0.02);
+        SinglePlayerGame<GameAction, GameStateImageSequence, Environment<GameAction, GameStateImageSequence>> game = new SinglePlayerGame<>(envImageSequence, agent, 10000, 32, 0.02);
         for (int i = (startingEpisode == null ? 0 : startingEpisode); i < (episodes == null ? 500 : episodes); i++) {
-            PlayResult<GameAction, GameStateImage> result = game.play();
+            PlayResult<GameAction, GameStateImageSequence> result = game.play();
             saveAnimatedGif(result.getHistory().stream()
                     .map(HistoryEntry::getObservation)
-                    .map(GameStateImage::getObservation)
+                    .map(GameStateImageSequence::getObservation)
+                    .map(f -> f.get(STACK_SIZE - 1))
                     .toList(), i);
             greedy.decrease(i);
             if (saveModel) {

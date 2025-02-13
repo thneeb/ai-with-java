@@ -8,7 +8,7 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class TrainingData<O extends Observation> {
-    private O input;
+    private O observation;
     private double[] output;
-    private int index;
+    private int action;
 }

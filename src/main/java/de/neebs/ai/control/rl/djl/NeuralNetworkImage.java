@@ -80,7 +80,7 @@ public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDjlN
             List<NDArray> inputs = new ArrayList<>();
             List<NDArray> targets = new ArrayList<>();
             for (TrainingData<O> data : trainingData) {
-                inputs.add(transformImage(data.getInput().getObservation()));
+                inputs.add(transformImage(data.getObservation().getObservation()));
                 targets.add(getManager().create(convert(data.getOutput())));
             }
 

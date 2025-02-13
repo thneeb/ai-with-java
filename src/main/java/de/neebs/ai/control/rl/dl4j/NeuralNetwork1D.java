@@ -7,7 +7,6 @@ import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.ops.transforms.Transforms;
 
 import java.util.List;
 import java.util.Random;
@@ -19,11 +18,6 @@ public class NeuralNetwork1D<O extends Observation1D> extends AbstractDl4jNetwor
 
     public NeuralNetwork1D(String filename) {
         super(filename);
-    }
-
-    @Override
-    public void copyParams(QNetwork<O> other) {
-        super.copyParams((AbstractDl4jNetwork<O>) other);
     }
 
     @Override
@@ -50,7 +44,7 @@ public class NeuralNetwork1D<O extends Observation1D> extends AbstractDl4jNetwor
     @Override
     public void train(List<TrainingData<O>> trainingData) {
         double[][] inputs = trainingData.stream()
-                .map(TrainingData::getInput)
+                .map(TrainingData::getObservation)
                 .map(Observation1D::getFlattenedObservation)
                 .toArray(double[][]::new);
         double[][] outputs = trainingData.stream()

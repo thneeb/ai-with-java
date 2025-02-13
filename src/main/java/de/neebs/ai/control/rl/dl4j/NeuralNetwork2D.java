@@ -7,7 +7,6 @@ import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.ops.transforms.Transforms;
 
 import java.util.List;
 import java.util.Random;
@@ -40,7 +39,7 @@ public class NeuralNetwork2D<O extends Observation2D> extends AbstractDl4jNetwor
 
     public void train(List<TrainingData<O>> trainingData) {
         double[][][][] inputs = trainingData.stream()
-                .map(TrainingData::getInput)
+                .map(TrainingData::getObservation)
                 .map(Observation2D::getObservation)
                 .map(f -> new double[][][] { f })
                 .toArray(double[][][][]::new);
@@ -59,10 +58,5 @@ public class NeuralNetwork2D<O extends Observation2D> extends AbstractDl4jNetwor
             n.setParams(getNetwork().params());
             return n;
         }, new Random().nextLong());
-    }
-
-    @Override
-    public void copyParams(QNetwork<O> other) {
-        super.copyParams((AbstractDl4jNetwork<O>) other);
     }
 }

@@ -185,7 +185,7 @@
                 <sourceFolder>src/gen/java/main</sourceFolder>
                 <generateSupportingFiles>true</generateSupportingFiles>
                 <interfaceOnly>true</interfaceOnly>
-                <useResponseEntity>true</useResponseEntity>
+                <useResponseEntity>false</useResponseEntity>
                 <skipDefaultInterface>true</skipDefaultInterface>
                 <useTags>true</useTags>
                 <useSpringBoot3>true</useSpringBoot3>

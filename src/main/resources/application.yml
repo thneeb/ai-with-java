@@ -11,3 +11,7 @@ server:
   port: 8081
   error:
     include-message: always
+app:
+  ai:
+    python:
+      url: http://localhost:5001

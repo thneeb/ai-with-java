@@ -11,7 +11,7 @@ public interface QNetwork<O extends Observation> {
 
     void save(String filename);
 
-    void copyParams(QNetwork<O> other);
+    void copyParams(QNetwork<O> source);
 
     QNetwork<O> copy();
 }

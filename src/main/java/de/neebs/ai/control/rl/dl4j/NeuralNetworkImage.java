@@ -9,7 +9,6 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.ops.transforms.Transforms;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -48,26 +47,15 @@ public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDl4j
 
     public void train(List<TrainingData<O>> trainingData) {
         INDArray[] inputs = trainingData.stream()
-                .map(TrainingData::getInput)
+                .map(TrainingData::getObservation)
                 .map(ObservationImage::getObservation)
                 .map(this::asMatrix)
                 .toArray(INDArray[]::new);
         double[][] outputs = trainingData.stream()
                 .map(TrainingData::getOutput)
                 .toArray(double[][]::new);
-/*
-        double[][] labelMask = trainingData.stream()
-                .map(this::createMask)
-                .toArray(double[][]::new);
- */
         DataSet dataSet = new DataSet(Nd4j.concat(0, inputs), Nd4j.create(outputs), null, null);
         getNetwork().fit(dataSet);
-    }
-
-    private double[] createMask(TrainingData<O> data) {
-        double[] mask = new double[data.getOutput().length];
-        mask[data.getIndex()] = 1;
-        return mask;
     }
 
     private INDArray asMatrix(BufferedImage input) {
@@ -85,10 +73,5 @@ public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDl4j
             n.setParams(getNetwork().params());
             return n;
         }, new Random().nextLong());
-    }
-
-    @Override
-    public void copyParams(QNetwork<O> other) {
-        super.copyParams((AbstractDl4jNetwork<O>) other);
     }
 }

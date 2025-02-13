@@ -6,32 +6,21 @@ info:
     name: Thomas Neeb
     email: thomas.neeb@nttdata.com
 paths:
-  /models:
-    post:
-      operationId: createModel
-      responses:
-        '201':
-          description: Returns the id of the created model
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  modelId:
-                    type: string
   /instances:
     post:
       operationId: createInstance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstanceConfiguration'
       responses:
         '201':
           description: Returns the id of the created instance
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  instanceId:
-                    type: string
+                $ref: '#/components/schemas/InstanceId'
   /instances/{instanceId}/predictions:
     parameters:
       - name: instanceId
@@ -72,68 +61,96 @@ paths:
       responses:
         '204':
           description: Trained data successfully
+  /instance/{instanceId}/copies:
+    parameters:
+      - name: instanceId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: copy
+      responses:
+        '201':
+          description: Returns the id of the created instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceId'
+    put:
+      operationId: copyParams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstanceId'
+      responses:
+        '204':
+          description: Returns the id of the created instance
 components:
   schemas:
-    Observation1D:
+    InstanceConfiguration:
       type: object
       properties:
-        data:
+        instanceId:
+          type: string
+        initialize:
+          type: boolean
+    Observation1D:
+      type: array
+      items:
+        type: number
+        format: double
+    Observation2D:
+      type: array
+      items:
+        type: array
+        items:
+          type: number
+          format: double
+    Observation3D:
+      type: array
+      items:
+        type: array
+        items:
           type: array
           items:
             type: number
             format: double
-    Observation2D:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: array
-            items:
-              type: number
-              format: double
-    Observation3D:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: array
-            items:
-              type: array
-              items:
-                type: number
-                format: double
     TrainingData1D:
       type: object
       properties:
-        feature:
+        observation:
           $ref: '#/components/schemas/Observation1D'
-        label:
+        output:
           $ref: '#/components/schemas/ModelOutput'
         action:
           type: integer
     TrainingData2D:
       type: object
       properties:
-        feature:
+        observation:
           $ref: '#/components/schemas/Observation2D'
-        label:
+        output:
           $ref: '#/components/schemas/ModelOutput'
         action:
           type: integer
     TrainingData3D:
       type: object
       properties:
-        feature:
+        observation:
           $ref: '#/components/schemas/Observation3D'
-        label:
+        output:
           $ref: '#/components/schemas/ModelOutput'
         action:
           type: integer
     ModelOutput:
+      type: array
+      items:
+        type: number
+        format: double
+    InstanceId:
       type: object
       properties:
-        prediction:
-          type: number
-          format: double
+        instanceId:
+          type: string

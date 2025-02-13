@@ -3,23 +3,19 @@ package de.neebs.ai.control.games;
 import de.neebs.ai.control.rl.QNetwork;
 import de.neebs.ai.control.rl.dl4j.NeuralNetworkFactory;
 import de.neebs.ai.control.rl.dl4j.NeuralNetworkImage;
+import de.neebs.ai.control.rl.dl4j.NeuralNetworkImageSequence;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.distribution.NormalDistribution;
-import org.deeplearning4j.nn.conf.distribution.UniformDistribution;
 import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.nn.weights.WeightInitUniform;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.activations.impl.ActivationLReLU;
-import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.learning.config.Sgd;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
@@ -95,6 +91,14 @@ public class PongDL4J implements NeuralNetworkFactory {
             return new NeuralNetworkImage<>(this, new Random().nextLong());
         } else {
             return new NeuralNetworkImage<>(filename);
+        }
+    }
+
+    QNetwork<Pong.GameStateImageSequence> createQNetwork2(String filename) {
+        if (filename == null) {
+            return new NeuralNetworkImageSequence<>(this, new Random().nextLong());
+        } else {
+            return new NeuralNetworkImageSequence<>(filename);
         }
     }
 

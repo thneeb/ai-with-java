@@ -41,7 +41,7 @@ public class MultiFileQNetwork<O extends Observation, A extends Action> implemen
     @Override
     public void train(List<TrainingData<O>> trainingData) {
         for (TrainingData<O> data : trainingData) {
-            train(data.getInput(), data.getOutput());
+            train(data.getObservation(), data.getOutput());
         }
     }
 
@@ -62,7 +62,7 @@ public class MultiFileQNetwork<O extends Observation, A extends Action> implemen
     }
 
     @Override
-    public void copyParams(QNetwork<O> other) {
+    public void copyParams(QNetwork<O> source) {
         throw new UnsupportedOperationException();
     }
 

@@ -29,8 +29,9 @@ public abstract class AbstractDl4jNetwork<O extends Observation> implements QNet
         }
     }
 
-    public void copyParams(AbstractDl4jNetwork<O> other) {
-        network.setParams(other.network.params());
+    @Override
+    public void copyParams(QNetwork<O> source) {
+        network.setParams(((AbstractDl4jNetwork<O>)source).network.params());
     }
 
     @Override

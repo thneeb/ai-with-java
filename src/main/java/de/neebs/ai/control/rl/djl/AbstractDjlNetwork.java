@@ -52,9 +52,9 @@ public abstract class AbstractDjlNetwork<O extends Observation> implements QNetw
     }
 
     @Override
-    public void copyParams(QNetwork<O> other) {
+    public void copyParams(QNetwork<O> source) {
         // Angenommen, beide Modelle haben denselben Block (z.B. denselben Architekturbaum)
-        Block sourceBlock = ((AbstractDjlNetwork<O>)other).model.getBlock();
+        Block sourceBlock = ((AbstractDjlNetwork<O>) source).model.getBlock();
         Block targetBlock = model.getBlock();
 
         // Hole die Parameter als Map (Name -> Parameter) aus dem Quellblock
