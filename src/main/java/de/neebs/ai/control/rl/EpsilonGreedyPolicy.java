@@ -30,10 +30,11 @@ public class EpsilonGreedyPolicy {
 
     public boolean isExploration() {
         return RANDOM.nextDouble() < getEpsilon();
-
     }
 
     public void decrease() {
-        epsilon = Math.max(epsilonMin, epsilon - decreaseRate);
+        if (epsilon > epsilonMin) {
+            epsilon -= decreaseRate;
+        }
     }
 }

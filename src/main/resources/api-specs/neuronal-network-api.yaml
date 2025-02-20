@@ -21,6 +21,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InstanceId'
+  /instances/{instanceId}:
+    parameters:
+      - name: instanceId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getInstance
+      responses:
+        '200':
+          description: Returns the instance configuration
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/InstanceId'
   /instances/{instanceId}/predictions:
     parameters:
       - name: instanceId
@@ -92,10 +108,8 @@ components:
     InstanceConfiguration:
       type: object
       properties:
-        instanceId:
-          type: string
-        initialize:
-          type: boolean
+        saveFrequency:
+          type: integer
     Observation1D:
       type: array
       items:

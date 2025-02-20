@@ -86,7 +86,7 @@ public class PongDL4J implements NeuralNetworkFactory {
         return model;
     }
 
-    QNetwork<Pong.GameStateImage> createQNetwork(String filename) {
+    QNetwork<Pong.GameAction, Pong.GameStateImage> createQNetwork(String filename) {
         if (filename == null) {
             return new NeuralNetworkImage<>(this, new Random().nextLong());
         } else {
@@ -94,7 +94,7 @@ public class PongDL4J implements NeuralNetworkFactory {
         }
     }
 
-    QNetwork<Pong.GameStateImageSequence> createQNetwork2(String filename) {
+    QNetwork<Pong.GameAction, Pong.GameStateImageSequence> createQNetwork2(String filename) {
         if (filename == null) {
             return new NeuralNetworkImageSequence<>(this, new Random().nextLong());
         } else {

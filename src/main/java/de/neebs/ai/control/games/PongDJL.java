@@ -75,7 +75,7 @@ public class PongDJL implements NeuralNetworkFactory {
         return model.newTrainer(config);
     }
 
-    QNetwork<Pong.GameStateImage> createQNetwork(String filename) {
+    QNetwork<Pong.GameAction, Pong.GameStateImage> createQNetwork(String filename) {
         if (filename == null) {
             return new NeuralNetworkImage<>(this, new Random().nextLong());
         } else {

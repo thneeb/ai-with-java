@@ -4,11 +4,11 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DoubleQLearningAgent<A extends Action, O extends Observation> extends QLearningAgent<A, O> {
-    private final QNetwork<O> targetNetwork;
+    private final QNetwork<A, O> targetNetwork;
     private final int updateFrequency;
     private int updateCounter = 0;
 
-    public DoubleQLearningAgent(QNetwork<O> neuralNetwork, EpsilonGreedyPolicy policy, double gamma, int updateFrequency) {
+    public DoubleQLearningAgent(QNetwork<A, O> neuralNetwork, EpsilonGreedyPolicy policy, double gamma, int updateFrequency) {
         super(neuralNetwork, policy, gamma);
         this.targetNetwork = neuralNetwork.copy();
         this.updateFrequency = updateFrequency;
@@ -16,10 +16,14 @@ public class DoubleQLearningAgent<A extends Action, O extends Observation> exten
 
     @Override
     public void learn(List<Transition<A, O>> transitions) {
-        List<TrainingData<O>> trainingData = transitions.stream()
-                .map(this::transition2TrainingData)
-                .toList();
-        getNeuralNetwork().train(trainingData);
+        if (getNeuralNetwork().isFastTrainingSupported()) {
+            getNeuralNetwork().train(transitions, getGamma());
+        } else {
+            List<TrainingData<O>> trainingData = transitions.stream()
+                    .map(this::transition2TrainingData)
+                    .toList();
+            getNeuralNetwork().train(trainingData);
+        }
         updateCounter++;
         if (updateCounter >= updateFrequency) {
             updateCounter -= updateFrequency;
@@ -30,7 +34,7 @@ public class DoubleQLearningAgent<A extends Action, O extends Observation> exten
     private TrainingData<O> transition2TrainingData(Transition<A, O> transition) {
         double[] qPrevious = getNeuralNetwork().predict(transition.getObservation());
         double q;
-        if (transition.getNextObservation() == null) {
+        if (transition.isDone()) {
             q = 0.0;
         } else {
             double[] qNext = targetNetwork.predict(transition.getNextObservation());

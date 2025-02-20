@@ -1,7 +1,7 @@
 package de.neebs.ai.control.rl.dl4j;
 
+import de.neebs.ai.control.rl.Action;
 import de.neebs.ai.control.rl.Observation2D;
-import de.neebs.ai.control.rl.QNetwork;
 import de.neebs.ai.control.rl.TrainingData;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -11,7 +11,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import java.util.List;
 import java.util.Random;
 
-public class NeuralNetwork2D<O extends Observation2D> extends AbstractDl4jNetwork<O> {
+public class NeuralNetwork2D<A extends Action, O extends Observation2D> extends AbstractDl4jNetwork<A, O> {
     public NeuralNetwork2D(NeuralNetworkFactory factory, long seed) {
         super(factory, seed);
     }
@@ -52,7 +52,7 @@ public class NeuralNetwork2D<O extends Observation2D> extends AbstractDl4jNetwor
         getNetwork().fit(dataSet);
     }
 
-    public NeuralNetwork2D<O> copy() {
+    public NeuralNetwork2D<A, O> copy() {
         return new NeuralNetwork2D<>((long seed) -> {
             MultiLayerNetwork n = getNetwork().clone();
             n.setParams(getNetwork().params());

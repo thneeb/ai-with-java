@@ -1,5 +1,6 @@
 package de.neebs.ai.control.rl.dl4j;
 
+import de.neebs.ai.control.rl.Action;
 import de.neebs.ai.control.rl.ObservationImage;
 import de.neebs.ai.control.rl.QNetwork;
 import de.neebs.ai.control.rl.TrainingData;
@@ -15,7 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
-public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDl4jNetwork<O> {
+public class NeuralNetworkImage<A extends Action, O extends ObservationImage> extends AbstractDl4jNetwork<A, O> {
     private final Java2DNativeImageLoader loader = new Java2DNativeImageLoader();
 
     public NeuralNetworkImage(NeuralNetworkFactory factory, long seed) {
@@ -59,15 +60,15 @@ public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDl4j
     }
 
     private INDArray asMatrix(BufferedImage input) {
-        try {
-            return loader.asMatrix(input).div(255);
+        try (INDArray array = loader.asMatrix(input)){
+            return array.div(255);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
     @Override
-    public QNetwork<O> copy() {
+    public QNetwork<A, O> copy() {
         return new NeuralNetworkImage<>((long seed) -> {
             MultiLayerNetwork n = getNetwork().clone();
             n.setParams(getNetwork().params());

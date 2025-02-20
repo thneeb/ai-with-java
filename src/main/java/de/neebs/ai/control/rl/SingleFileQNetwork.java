@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class SingleFileQNetwork<O extends Observation, A extends Action> implements QNetwork<O> {
+public class SingleFileQNetwork<O extends Observation, A extends Action> implements QNetwork<A, O> {
     private static final Random RANDOM = new Random();
     private static final ObjectMapper mapper = new ObjectMapper();
     private final Map<O, List<Double>> qValues;
@@ -86,12 +86,12 @@ public class SingleFileQNetwork<O extends Observation, A extends Action> impleme
     }
 
     @Override
-    public QNetwork<O> copy() {
+    public QNetwork<A, O> copy() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void copyParams(QNetwork<O> source) {
+    public void copyParams(QNetwork<A, O> source) {
         throw new UnsupportedOperationException();
     }
 

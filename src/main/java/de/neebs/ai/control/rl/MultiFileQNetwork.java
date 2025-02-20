@@ -12,7 +12,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MultiFileQNetwork<O extends Observation, A extends Action> implements QNetwork<O> {
+public class MultiFileQNetwork<A extends Action, O extends Observation> implements QNetwork<A, O> {
     private static final Random RANDOM = new Random();
     private static final ObjectMapper mapper = new ObjectMapper();
     private final double learnRate;
@@ -57,12 +57,12 @@ public class MultiFileQNetwork<O extends Observation, A extends Action> implemen
     }
 
     @Override
-    public QNetwork<O> copy() {
+    public QNetwork<A, O> copy() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void copyParams(QNetwork<O> source) {
+    public void copyParams(QNetwork<A, O> source) {
         throw new UnsupportedOperationException();
     }
 

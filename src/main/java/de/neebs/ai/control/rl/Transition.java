@@ -14,4 +14,5 @@ public class Transition<A extends Action, O extends Observation> {
     private A action;
     private double reward;
     private O nextObservation;
+    private boolean done;
 }

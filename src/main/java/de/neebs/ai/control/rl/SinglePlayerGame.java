@@ -9,12 +9,12 @@ import java.util.*;
 @Getter
 public class SinglePlayerGame<A extends Action, O extends Observation, E extends Environment<A, O>> {
     private final E environment;
-    private final Agent<A, O> agent;
+    private final LearningAgent<A, O> agent;
     private final ReplayBuffer<A, O> replayBuffer;
     private final int batchSize;
     private final double rewardPercentage;
 
-    public SinglePlayerGame(E environment, Agent<A, O> agent, int bufferSize, int batchSize, double rewardPercentage) {
+    public SinglePlayerGame(E environment, LearningAgent<A, O> agent, int bufferSize, int batchSize, double rewardPercentage) {
         this.environment = environment;
         this.agent = agent;
         this.replayBuffer = new ReplayBuffer<>(bufferSize);
@@ -37,12 +37,13 @@ public class SinglePlayerGame<A extends Action, O extends Observation, E extends
                     .observation(observation)
                     .action(action)
                     .reward(stepResult.getReward())
-                    .nextObservation(done ? null : stepResult.getObservation())
+                    .nextObservation(stepResult.getObservation())
+                    .done(done)
                     .build());
 
-            if (agent instanceof LearningAgent<A, O> learningAgent && replayBuffer.size() >= batchSize) {
+            if (replayBuffer.size() >= batchSize) {
                 List<Transition<A, O>> transitions = replayBuffer.sample(batchSize, rewardPercentage);
-                learningAgent.learn(transitions);
+                agent.learn(transitions);
             }
 
             observation = stepResult.getObservation();

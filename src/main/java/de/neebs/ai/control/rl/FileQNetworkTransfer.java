@@ -25,7 +25,7 @@ public class FileQNetworkTransfer<A extends Action, O extends Observation> {
             List<SaveQWeights<O>> data = mapper.readValue(file, type2);
             Map<O, List<Double>> qValues = data.stream().collect(Collectors.toMap(SaveQWeights::getObservation, SaveQWeights::getWeights));
             for (Map.Entry<O, List<Double>> entry : qValues.entrySet()) {
-                MultiFileQNetwork<O, A> network = new MultiFileQNetwork<>(0.1, actionClass);
+                MultiFileQNetwork<A, O> network = new MultiFileQNetwork<>(0.1, actionClass);
                 network.train(entry.getKey(), entry.getValue().stream().mapToDouble(Double::doubleValue).toArray());
             }
         } catch (IOException e) {

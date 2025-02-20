@@ -1,8 +1,6 @@
 package de.neebs.ai.control.rl.dl4j;
 
-import de.neebs.ai.control.rl.ObservationImageSequence;
-import de.neebs.ai.control.rl.QNetwork;
-import de.neebs.ai.control.rl.TrainingData;
+import de.neebs.ai.control.rl.*;
 import org.datavec.image.loader.Java2DNativeImageLoader;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -15,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class NeuralNetworkImageSequence<O extends ObservationImageSequence> extends AbstractDl4jNetwork<O> {
+public class NeuralNetworkImageSequence<A extends Action, O extends ObservationImageSequence> extends AbstractDl4jNetwork<A, O> {
     private final Java2DNativeImageLoader loader = new Java2DNativeImageLoader();
 
     public NeuralNetworkImageSequence(NeuralNetworkFactory factory, long seed) {
@@ -57,6 +55,33 @@ public class NeuralNetworkImageSequence<O extends ObservationImageSequence> exte
         getNetwork().fit(dataSet);
     }
 
+    @Override
+    public boolean isFastTrainingSupported() {
+        return true;
+    }
+
+    @Override
+    public void train(List<Transition<A, O>> transitions, double gamma) {
+        try (INDArray rewards = Nd4j.create(transitions.stream().mapToDouble(Transition::getReward).toArray())) {
+            INDArray[] states = transitions.stream()
+                    .map(Transition::getObservation)
+                    .map(ObservationImageSequence::getObservation)
+                    .map(this::asMatrix).toArray(INDArray[]::new);
+            INDArray[] nextStates = transitions.stream()
+                    .map(Transition::getNextObservation)
+                    .map(ObservationImageSequence::getObservation)
+                    .map(this::asMatrix).toArray(INDArray[]::new);
+            INDArray qValues = getNetwork().output(Nd4j.concat(0, states));
+            INDArray nextQValues = getNetwork().output(Nd4j.concat(0, nextStates));
+            INDArray maxNextQ = nextQValues.max(1);
+            INDArray targetQValues = rewards.add(maxNextQ.mul(gamma));
+            for (int i = 0; i < transitions.size(); i++) {
+                qValues.putScalar(i, transitions.get(i).getAction().ordinal(), targetQValues.getDouble(i));
+            }
+            getNetwork().fit(new DataSet(Nd4j.concat(0, states), qValues));
+        }
+    }
+
     private INDArray asMatrix(List<BufferedImage> images) {
         List<INDArray> list = new ArrayList<>();
         for (BufferedImage image : images) {
@@ -74,7 +99,7 @@ public class NeuralNetworkImageSequence<O extends ObservationImageSequence> exte
     }
 
     @Override
-    public QNetwork<O> copy() {
+    public QNetwork<A, O> copy() {
         return new NeuralNetworkImageSequence<>((long seed) -> {
             MultiLayerNetwork n = getNetwork().clone();
             n.setParams(getNetwork().params());

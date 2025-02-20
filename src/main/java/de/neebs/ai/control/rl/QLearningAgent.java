@@ -9,7 +9,7 @@ import java.util.*;
 @RequiredArgsConstructor
 @Getter(AccessLevel.PACKAGE)
 public class QLearningAgent<A extends Action, O extends Observation> implements LearningAgent<A, O> {
-    private final QNetwork<O> neuralNetwork;
+    private final QNetwork<A, O> neuralNetwork;
     private final EpsilonGreedyPolicy policy;
     private final double gamma;
 
@@ -40,7 +40,7 @@ public class QLearningAgent<A extends Action, O extends Observation> implements 
         makeQValuesPositive(qValues);
 
         double q;
-        if (transition.getNextObservation() == null) {
+        if (transition.isDone()) {
             q = 0.0;
         } else {
             double[] qNext = getNeuralNetwork().predict(transition.getNextObservation());

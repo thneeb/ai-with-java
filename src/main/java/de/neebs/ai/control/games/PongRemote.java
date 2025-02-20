@@ -11,7 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 public class PongRemote {
     private final RemoteNetworkFacade remoteNetworkFacade;
 
-    QNetwork<Pong.GameStateImageSequence> createQNetwork(String filename) {
-        return new NeuralNetworkImageSequence<>(remoteNetworkFacade);
+    QNetwork<Pong.GameAction, Pong.GameStateImageSequence> createQNetwork(String filename) {
+        if (filename == null) {
+            return new NeuralNetworkImageSequence<>(remoteNetworkFacade);
+        } else {
+            return new NeuralNetworkImageSequence<>(remoteNetworkFacade, filename + ".txt");
+        }
     }
 }

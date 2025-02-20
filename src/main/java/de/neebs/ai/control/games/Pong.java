@@ -139,7 +139,7 @@ public class Pong {
         }
 
         @Override
-        protected GameStateImage wrapper(GameState3D observation) {
+        protected GameStateImage wrapper(GameState3D observation, boolean initialize) {
             BufferedImage image = Utils.createImage(observation);
             image = Utils.convertToGrayscale(image);
             image = Utils.resizeImage(image, WIDTH, HEIGHT);
@@ -163,7 +163,10 @@ public class Pong {
         }
 
         @Override
-        protected GameStateImageSequence wrapper(GameStateImage observation) {
+        protected GameStateImageSequence wrapper(GameStateImage observation, boolean initialize) {
+            if (initialize) {
+                stack.clear();
+            }
             if (stack.isEmpty()) {
                 for (int i = 0; i < stackSize; i++) {
                     stack.add(observation.getObservation());
@@ -181,12 +184,24 @@ public class Pong {
         }
     }
 
+    static class PositiveRewardBoost extends RewardFitter<GameAction, GameStateImageSequence> {
+        public PositiveRewardBoost(Environment<GameAction, GameStateImageSequence> environment) {
+            super(environment);
+        }
+
+        @Override
+        protected double fitReward(double reward) {
+            return reward > 0 ? 10 : reward;
+        }
+    }
+
     public void execute(boolean startFresh, boolean saveModel, Double epsilon, Integer startingEpisode, Integer episodes) {
         String filename = "pong-agent";
         Environment<GameAction, GameState3D> env3d =
                 new GymEnvironment<>(GameAction.class, GameState3D.class, gymClient).init("ale_py:ALE/Pong-v5");
         Environment<GameAction, GameStateImage> envImage = new ReduceImageSize(env3d);
         Environment<GameAction, GameStateImageSequence> envImageSequence = new StackedImageEnvironment(envImage, STACK_SIZE);
+//        envImageSequence = new PositiveRewardBoost(envImageSequence);
 
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder()
                 .epsilon(epsilon == null ? 1.0 : epsilon)
@@ -194,11 +209,11 @@ public class Pong {
                 .decreaseRate(0.01)
                 .build();
 
-//        QNetwork<GameStateImageSequence> network = new PongDL4J(WIDTH, HEIGHT, CHANNELS * STACK_SIZE, envImageSequence.getActionSpace().getActions().size()).createQNetwork2(startFresh ? null : filename);
-//        QNetwork<GameStateImage> network = new PongDJL(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
-        QNetwork<GameStateImageSequence> network = new PongRemote(remoteNetworkFacade).createQNetwork(null);
+        QNetwork<GameAction, GameStateImageSequence> network = new PongDL4J(WIDTH, HEIGHT, CHANNELS * STACK_SIZE, envImageSequence.getActionSpace().getActions().size()).createQNetwork2(startFresh ? null : filename);
+//        QNetwork<GameAction, GameStateImage> network = new PongDJL(WIDTH, HEIGHT, CHANNELS, envImage.getActionSpace().getActions().size()).createQNetwork(startFresh ? null : filename);
+//        QNetwork<GameAction, GameStateImageSequence> network = new PongRemote(remoteNetworkFacade).createQNetwork(filename);
 
-        Agent<GameAction, GameStateImageSequence> agent = new DoubleQLearningAgent<>(
+        LearningAgent<GameAction, GameStateImageSequence> agent = new DoubleQLearningAgent<>(
                 network,
                 greedy,
                 0.99,

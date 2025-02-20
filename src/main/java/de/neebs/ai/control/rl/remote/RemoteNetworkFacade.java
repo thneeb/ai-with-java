@@ -25,7 +25,17 @@ public class RemoteNetworkFacade implements DefaultApi {
     @Override
     public InstanceId createInstance(InstanceConfiguration config) {
         String url = this.url + "/instances";
-        return restTemplate.postForObject(url, null, InstanceId.class);
+        return restTemplate.postForObject(url, config, InstanceId.class);
+    }
+
+    @Override
+    public InstanceId getInstance(String instanceId) {
+        String url = MessageFormat.format(this.url + "/instances/{0}", instanceId);
+        ResponseEntity<InstanceId> response = restTemplate.exchange(url, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+        if (response.getBody() == null) {
+            throw new IllegalStateException("No response");
+        }
+        return response.getBody();
     }
 
     @Override

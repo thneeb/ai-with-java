@@ -1,7 +1,9 @@
 package de.neebs.ai.control.rl.dl4j;
 
+import de.neebs.ai.control.rl.Action;
 import de.neebs.ai.control.rl.Observation;
 import de.neebs.ai.control.rl.QNetwork;
+import de.neebs.ai.control.rl.Transition;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -10,10 +12,11 @@ import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 @Getter(value = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
-public abstract class AbstractDl4jNetwork<O extends Observation> implements QNetwork<O> {
+public abstract class AbstractDl4jNetwork<A extends Action, O extends Observation> implements QNetwork<A, O> {
     private final MultiLayerNetwork network;
 
     public AbstractDl4jNetwork(NeuralNetworkFactory factory, long seed) {
@@ -30,8 +33,8 @@ public abstract class AbstractDl4jNetwork<O extends Observation> implements QNet
     }
 
     @Override
-    public void copyParams(QNetwork<O> source) {
-        network.setParams(((AbstractDl4jNetwork<O>)source).network.params());
+    public void copyParams(QNetwork<A, O> source) {
+        network.setParams(((AbstractDl4jNetwork<A, O>)source).network.params());
     }
 
     @Override

@@ -14,6 +14,7 @@ import ai.djl.training.dataset.Dataset;
 import ai.djl.translate.TranslateException;
 import ai.djl.translate.Translator;
 import ai.djl.translate.TranslatorContext;
+import de.neebs.ai.control.rl.Action;
 import de.neebs.ai.control.rl.ObservationImage;
 import de.neebs.ai.control.rl.QNetwork;
 import de.neebs.ai.control.rl.TrainingData;
@@ -24,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDjlNetwork<O> {
+public class NeuralNetworkImage<A extends Action, O extends ObservationImage> extends AbstractDjlNetwork<A, O> {
     public NeuralNetworkImage(NeuralNetworkFactory factory, String filename, long seed) {
         super(factory, filename, seed);
     }
@@ -101,8 +102,8 @@ public class NeuralNetworkImage<O extends ObservationImage> extends AbstractDjlN
     }
 
     @Override
-    public QNetwork<O> copy() {
-        NeuralNetworkImage<O> copy = new NeuralNetworkImage<>(getFactory(), getSeed());
+    public QNetwork<A, O> copy() {
+        NeuralNetworkImage<A, O> copy = new NeuralNetworkImage<>(getFactory(), getSeed());
         copy.copyParams(this);
         return copy;
     }

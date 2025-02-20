@@ -14,20 +14,20 @@ public abstract class ObservationWrapper<A extends Action, Oin extends Observati
         this.environment = environment;
     }
 
-    protected abstract Oout wrapper(Oin observation);
+    protected abstract Oout wrapper(Oin observation, boolean initialize);
 
     @Override
     public abstract List<Integer> getObservationSpace();
 
     @Override
     public final Oout reset() {
-        return wrapper(environment.reset());
+        return wrapper(environment.reset(), true);
     }
 
     @Override
     public final StepResult<Oout> step(A action) {
         StepResult<Oin> stepResult = environment.step(action);
-        return new StepResult<>(wrapper(stepResult.getObservation()), stepResult.getReward(), stepResult.isDone());
+        return new StepResult<>(wrapper(stepResult.getObservation(), false), stepResult.getReward(), stepResult.isDone());
     }
 
     @Override
@@ -48,6 +48,6 @@ public abstract class ObservationWrapper<A extends Action, Oin extends Observati
 
     @Override
     public final Oout getCurrentObservation() {
-        return wrapper(environment.getCurrentObservation());
+        return wrapper(environment.getCurrentObservation(), false);
     }
 }

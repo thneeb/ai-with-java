@@ -1,5 +1,6 @@
 package de.neebs.ai.control.rl.remote;
 
+import de.neebs.ai.control.rl.Action;
 import de.neebs.ai.control.rl.ObservationImageSequence;
 import de.neebs.ai.control.rl.QNetwork;
 import de.neebs.ai.control.rl.TrainingData;
@@ -11,9 +12,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class NeuralNetworkImageSequence<O extends ObservationImageSequence> extends AbstractRemoteNetwork<O> {
+public class NeuralNetworkImageSequence<A extends Action, O extends ObservationImageSequence> extends AbstractRemoteNetwork<A, O> {
     public NeuralNetworkImageSequence(RemoteNetworkFacade remoteNetworkFacade) {
         super(remoteNetworkFacade);
+    }
+
+    public NeuralNetworkImageSequence(RemoteNetworkFacade remoteNetworkFacade, String filename) {
+        super(remoteNetworkFacade, filename);
     }
 
     @Override
@@ -40,29 +45,31 @@ public class NeuralNetworkImageSequence<O extends ObservationImageSequence> exte
             pixelArrays.add(pixels);
         }
 
-        // Erstelle die verschachtelte Liste: Zeile (Höhe) x Spalte (Breite) x nImages
-        List<List<List<Double>>> stackedImage = new ArrayList<>(height);
-
-        for (int y = 0; y < height; y++) {
-            List<List<Double>> row = new ArrayList<>(width);
-            for (int x = 0; x < width; x++) {
-                List<Double> pixelStack = new ArrayList<>(nImages);
-                // Index im Pixelarray berechnen
-                int index = y * width + x;
-                // Für jedes Bild den gewünschten Farbkanal extrahieren (hier: Rot)
-                for (int[] pixels : pixelArrays) {
+        // Erstelle die verschachtelte Liste in der Reihenfolge:
+        // Channel (nImages) x Height x Width
+        List<List<List<Double>>> stackedImage = new ArrayList<>(nImages);
+        // Für jedes Bild (also jeden Kanal) ...
+        for (int i = 0; i < nImages; i++) {
+            List<List<Double>> channelData = new ArrayList<>(height);
+            int[] pixels = pixelArrays.get(i);
+            // Für jede Zeile (Height)
+            for (int y = 0; y < height; y++) {
+                List<Double> row = new ArrayList<>(width);
+                // Für jede Spalte (Width)
+                for (int x = 0; x < width; x++) {
+                    int index = y * width + x;
                     int rgb = pixels[index];
+                    // Hier wird der Rotkanal extrahiert (als Beispiel)
                     int red = (rgb >> 16) & 0xFF;
                     double normalizedRed = red / 255.0;
-                    pixelStack.add(normalizedRed);
+                    row.add(normalizedRed);
                 }
-                row.add(pixelStack);
+                channelData.add(row);
             }
-            stackedImage.add(row);
+            stackedImage.add(channelData);
         }
         return stackedImage;
     }
-
     @Override
     public void train(O observation, double[] target) {
         throw new UnsupportedOperationException("Not implemented");
@@ -82,8 +89,8 @@ public class NeuralNetworkImageSequence<O extends ObservationImageSequence> exte
     }
 
     @Override
-    public QNetwork<O> copy() {
-        QNetwork<O> network = new NeuralNetworkImageSequence<>(getRemoteNetworkFacade());
+    public QNetwork<A, O> copy() {
+        QNetwork<A, O> network = new NeuralNetworkImageSequence<>(getRemoteNetworkFacade());
         network.copyParams(this);
         return network;
     }

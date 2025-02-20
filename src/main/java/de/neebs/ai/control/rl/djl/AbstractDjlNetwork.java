@@ -7,16 +7,19 @@ import ai.djl.nn.Block;
 import ai.djl.nn.Parameter;
 import ai.djl.nn.ParameterList;
 import ai.djl.training.Trainer;
+import de.neebs.ai.control.rl.Action;
 import de.neebs.ai.control.rl.Observation;
 import de.neebs.ai.control.rl.QNetwork;
+import de.neebs.ai.control.rl.Transition;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 @Getter
-public abstract class AbstractDjlNetwork<O extends Observation> implements QNetwork<O> {
+public abstract class AbstractDjlNetwork<A extends Action, O extends Observation> implements QNetwork<A, O> {
     private final NeuralNetworkFactory factory;
     private final Model model;
     private final NDManager manager = NDManager.newBaseManager();
@@ -52,9 +55,9 @@ public abstract class AbstractDjlNetwork<O extends Observation> implements QNetw
     }
 
     @Override
-    public void copyParams(QNetwork<O> source) {
+    public void copyParams(QNetwork<A, O> source) {
         // Angenommen, beide Modelle haben denselben Block (z.B. denselben Architekturbaum)
-        Block sourceBlock = ((AbstractDjlNetwork<O>) source).model.getBlock();
+        Block sourceBlock = ((AbstractDjlNetwork<A, O>) source).model.getBlock();
         Block targetBlock = model.getBlock();
 
         // Hole die Parameter als Map (Name -> Parameter) aus dem Quellblock

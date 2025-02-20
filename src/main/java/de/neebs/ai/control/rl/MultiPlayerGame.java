@@ -57,6 +57,7 @@ public class MultiPlayerGame<A extends Action, O extends MultiPlayerState & Obse
                             .action(entry.getAction())
                             .reward(reward)
                             .nextObservation(i == 0 ? null : ownMoves.get(i - 1).getObservation())
+                            .done(i == 0)
                             .build());
                 }
             }

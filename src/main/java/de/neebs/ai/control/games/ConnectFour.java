@@ -393,7 +393,7 @@ public class ConnectFour {
     public void execute(boolean startFresh, boolean saveModel, Integer saveInterval, Integer episodes) {
         String filename = "connect-four-agent-1d-dl4j.zip";
         Env environment = new Env(GameAction.class, GameState.class);
-        NeuralNetwork1D<GameState> network;
+        NeuralNetwork1D<GameAction, GameState> network;
         if (startFresh) {
             network = new NeuralNetwork1D<>(new NeuralNetworkFactory1D(), new Random().nextLong());
         } else {
@@ -491,7 +491,7 @@ public class ConnectFour {
         Env environment = new Env(GameAction.class, GameState.class);
         environment.setObservation(gameState);
         EpsilonGreedyPolicy greedy = EpsilonGreedyPolicy.builder().epsilon(0.01).epsilonMin(0.01).decreaseRate(0.001).step(1).build();
-        NeuralNetwork1D<GameState> network = new NeuralNetwork1D<>(filename);
+        NeuralNetwork1D<GameAction, GameState> network = new NeuralNetwork1D<>(filename);
 //        SingleFileQNetwork<GameState, GameAction> network = new SingleFileQNetwork<>(filename, GameState.class, 0.001, GameAction.class);
 //        QLearningAgent<GameAction, GameState> red = new QLearningAgent<>(network, greedy, 0.99);
         Agent<GameAction, GameState> red = new ConnectFourAgent(new ActionObservationFilter(), greedy, 4);
