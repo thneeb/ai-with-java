@@ -23,9 +23,6 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 public class AiWithJavaController implements DefaultApi {
-    private final PerceptronMain perceptronMain;
-    private final NetworkMain networkMain;
-    private final FirstExample firstExample;
     private final TicTacToe ticTacToe;
     private final ConnectFour connectFour;
     private final Pong pong;

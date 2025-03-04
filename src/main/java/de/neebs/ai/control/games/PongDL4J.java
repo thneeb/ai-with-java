@@ -5,6 +5,7 @@ import de.neebs.ai.control.rl.dl4j.NeuralNetworkFactory;
 import de.neebs.ai.control.rl.dl4j.NeuralNetworkImage;
 import de.neebs.ai.control.rl.dl4j.NeuralNetworkImageSequence;
 import lombok.extern.slf4j.Slf4j;
+import onnx.OnnxMl;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
